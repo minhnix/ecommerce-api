@@ -1,11 +1,8 @@
 package com.nix.ecommerceapi.model.response;
 
 import com.nix.ecommerceapi.model.dto.ExtInfo;
-import com.nix.ecommerceapi.model.request.VariantDefinition;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Getter
 @Setter

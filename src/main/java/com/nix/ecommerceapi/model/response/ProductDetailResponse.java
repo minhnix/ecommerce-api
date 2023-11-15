@@ -1,19 +1,16 @@
 package com.nix.ecommerceapi.model.response;
 
+import com.nix.ecommerceapi.mapper.ModelMapper;
 import com.nix.ecommerceapi.model.dto.ExtInfo;
 import com.nix.ecommerceapi.model.dto.ProductOptionsDTO;
 import com.nix.ecommerceapi.model.entity.*;
-import com.nix.ecommerceapi.model.request.VariantDefinition;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -87,14 +84,7 @@ public class ProductDetailResponse {
         public ProductDetailResponseBuilder setModels(List<Model> models) {
             List<ModelResponse> modelResponses = new ArrayList<>();
             for (var model : models) {
-                ModelResponse modelResponse = new ModelResponse();
-                modelResponse.setProductId(model.getProduct().getId());
-                modelResponse.setModelId(model.getId());
-                modelResponse.setPublished(model.isPublished());
-                modelResponse.setPrice(model.getPrice());
-                modelResponse.setName(model.getName());
-                modelResponse.setStock(model.getInventory().getStock());
-                modelResponse.setPriceAfterDiscount(model.getPriceAfterDiscount());
+                ModelResponse modelResponse = ModelMapper.INSTANCE.mapToModelResponse(model);
                 modelResponse.setExtInfo(new ExtInfo(
                         getProductOptionIndex(model.getName(), this.productOptions)
                 ));

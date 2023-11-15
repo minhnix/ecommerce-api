@@ -1,13 +1,11 @@
 package com.nix.ecommerceapi.service.impl;
 
-import com.cosium.spring.data.jpa.entity.graph.domain2.EntityGraph;
 import com.nix.ecommerceapi.exception.ForbiddenException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.mapper.CartMapper;
 import com.nix.ecommerceapi.model.entity.Cart;
+import com.nix.ecommerceapi.model.entity.CartEntityGraph;
 import com.nix.ecommerceapi.model.entity.Model;
-import com.nix.ecommerceapi.model.entity.Product;
-import com.nix.ecommerceapi.model.entity.ProductEntityGraph;
 import com.nix.ecommerceapi.model.request.CartRequest;
 import com.nix.ecommerceapi.model.request.UpdateCartQuantity;
 import com.nix.ecommerceapi.model.response.CartResponse;
@@ -28,6 +26,7 @@ import java.util.stream.Collectors;
 public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final ModelRepository modelRepository;
+
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
     public Cart addProductToCart(CartRequest cartRequest, CustomUserDetails user) {
@@ -81,7 +80,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public List<CartResponse> getAllCartByUser(CustomUserDetails user) {
-        List<Cart> carts = cartRepository.findAllByUserId(user.getId(), EntityGraph.NOOP);
+        List<Cart> carts = cartRepository.findAllByUserId(user.getId(), CartEntityGraph.____()
+                .model().product().____.____());
         return carts.stream().map(CartMapper.INSTANCE::toCartResponse).collect(Collectors.toList());
     }
 }

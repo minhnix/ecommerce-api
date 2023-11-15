@@ -127,13 +127,7 @@ public class ProductServiceImpl implements ProductService {
         boolean existName = productRepository.existsByName(productRequest.getName());
         if (existName) throw new DuplicateEntityException("Product with the same name already exists");
         product.setCategory(category);
-        product.setDescription(productRequest.getDescription());
-        product.setName(productRequest.getName());
-        product.setImage(productRequest.getImage());
-        product.setPrice(productRequest.getPrice());
-        product.setPriceAfterDiscount(productRequest.getPriceAfterDiscount());
-        product.setPublished(productRequest.isPublished());
-        product.setVariant(productRequest.isVariant());
+        ProductMapper.INSTANCE.updateProduct(productRequest, product);
         for (AttributeDTO dto : productRequest.getAttributes()) {
             product.addAttribute(new Attribute(dto.getName(), dto.getValue()));
         }
