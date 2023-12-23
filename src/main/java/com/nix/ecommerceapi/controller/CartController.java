@@ -3,6 +3,7 @@ package com.nix.ecommerceapi.controller;
 import com.nix.ecommerceapi.annotation.CurrentUser;
 import com.nix.ecommerceapi.exception.AuthFailureException;
 import com.nix.ecommerceapi.mapper.CartMapper;
+import com.nix.ecommerceapi.model.dto.CartDTO;
 import com.nix.ecommerceapi.model.entity.Cart;
 import com.nix.ecommerceapi.model.request.CartRequest;
 import com.nix.ecommerceapi.model.response.CartResponse;
@@ -27,21 +28,21 @@ public class CartController {
     }
 
     @GetMapping("/amount")
-    public int getAmountCart(@CurrentUser CustomUserDetails user) {
+    public Integer getAmountCart(@CurrentUser CustomUserDetails user) {
         if (user == null) throw new AuthFailureException("Full authentication to get resource");
         return cartService.getAmountCart(user);
     }
 
     @PostMapping
-    public CartResponse createOrUpdateCartItem(@CurrentUser CustomUserDetails user, @RequestBody CartRequest cartRequest) {
+    public CartDTO createOrUpdateCartItem(@CurrentUser CustomUserDetails user, @RequestBody CartRequest cartRequest) {
         if (user == null) throw new AuthFailureException("Full authentication to get resource");
-        return CartMapper.INSTANCE.toCartResponse(cartService.addProductToCart(cartRequest, user));
+        return cartService.addProductToCart(cartRequest, user);
     }
 
     @PutMapping("/{id}")
-    public CartResponse updateCartQuantity(@PathVariable("id") Long id, @RequestBody CartRequest cartRequest, @CurrentUser CustomUserDetails user) {
+    public CartDTO updateCartQuantity(@PathVariable("id") Long id, @RequestBody CartRequest cartRequest, @CurrentUser CustomUserDetails user) {
         if (user == null) throw new AuthFailureException("Full authentication to get resource");
-        return CartMapper.INSTANCE.toCartResponse(cartService.updateCartQuantity(id, cartRequest, user));
+        return cartService.updateCartQuantity(id, cartRequest, user);
     }
 
     @DeleteMapping("/{id}")

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CartRepository extends EntityGraphJpaRepository<Cart, Long> {
-    Optional<Cart> findByUserIdAndModelId(Long userId, Long modelId);
+    Optional<Cart> findByUserIdAndModelId(Long userId, Long modelId, EntityGraph entityGraph);
     void deleteByUserId(Long userId);
     int countByUserId(Long userId);
     List<Cart> findAllByUserId(Long userId, EntityGraph entityGraph);
