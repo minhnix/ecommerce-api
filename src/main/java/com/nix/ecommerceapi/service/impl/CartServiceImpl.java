@@ -6,11 +6,12 @@ import com.nix.ecommerceapi.mapper.CartMapper;
 import com.nix.ecommerceapi.model.entity.Cart;
 import com.nix.ecommerceapi.model.entity.CartEntityGraph;
 import com.nix.ecommerceapi.model.entity.Model;
+import com.nix.ecommerceapi.model.entity.ModelEntityGraph;
 import com.nix.ecommerceapi.model.request.CartRequest;
-import com.nix.ecommerceapi.model.request.UpdateCartQuantity;
 import com.nix.ecommerceapi.model.response.CartResponse;
 import com.nix.ecommerceapi.repository.CartRepository;
 import com.nix.ecommerceapi.repository.ModelRepository;
+import com.nix.ecommerceapi.repository.UserRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.CartService;
 import lombok.AllArgsConstructor;
@@ -37,7 +38,7 @@ public class CartServiceImpl implements CartService {
         } else {
             cart = new Cart();
             cart.setUser(user.getUser());
-            Model model = modelRepository.findById(cartRequest.getModelId())
+            Model model = modelRepository.findById(cartRequest.getModelId(), ModelEntityGraph.____().____())
                     .orElseThrow(() -> new NotFoundException("Model not found with id: " + cartRequest.getModelId()));
             cart.setModel(model);
             cart.setQuantity(cartRequest.getQuantity());
@@ -46,16 +47,16 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public Cart updateProductQuantity(UpdateCartQuantity updateCartQuantity, CustomUserDetails user) {
-        Cart cart = cartRepository.findById(updateCartQuantity.getCartId())
+    public Cart updateCartQuantity(Long cartId, CartRequest cartRequest, CustomUserDetails user) {
+        Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new NotFoundException("Cart not found"));
         if (!cart.getUser().getId().equals(user.getId()))
             throw new ForbiddenException("Access denied");
-        if (updateCartQuantity.getQuantity() == 0) {
+        if (cartRequest.getQuantity() == 0) {
             cartRepository.delete(cart);
             return null;
         }
-        cart.setQuantity(updateCartQuantity.getQuantity());
+        cart.setQuantity(cartRequest.getQuantity());
         return cartRepository.save(cart);
     }
 
