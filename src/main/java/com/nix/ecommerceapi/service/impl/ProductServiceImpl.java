@@ -6,7 +6,9 @@ import com.nix.ecommerceapi.mapper.ProductMapper;
 import com.nix.ecommerceapi.model.dto.AttributeDTO;
 import com.nix.ecommerceapi.model.entity.*;
 import com.nix.ecommerceapi.model.request.ProductRequest;
-import com.nix.ecommerceapi.model.response.*;
+import com.nix.ecommerceapi.model.response.PagedResponse;
+import com.nix.ecommerceapi.model.response.ProductDetailResponse;
+import com.nix.ecommerceapi.model.response.SimpleProductResponse;
 import com.nix.ecommerceapi.repository.CategoryRepository;
 import com.nix.ecommerceapi.repository.ProductRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
@@ -18,7 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +61,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     public SimpleProductResponse publishProduct(Long id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findById(id, ProductEntityGraph.____().category().____.____())
                 .orElseThrow(() -> new NotFoundException(String.format("Product not found with id %d", id)));
         product.setPublished(true);
         return ProductMapper.INSTANCE.toSimpleProductResponse(productRepository.save(product));
@@ -67,7 +69,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     public SimpleProductResponse unPublishProduct(Long id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findById(id, ProductEntityGraph.____().category().____.____())
                 .orElseThrow(() -> new NotFoundException(String.format("Product not found with id %d", id)));
         product.setPublished(false);
         return ProductMapper.INSTANCE.toSimpleProductResponse(productRepository.save(product));

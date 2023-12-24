@@ -86,7 +86,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public List<CartResponse> getAllCartByUser(CustomUserDetails user) {
         List<Cart> carts = cartRepository.findAllByUserId(user.getId(), CartEntityGraph.____()
-                .model().product().____.____());
+                .model().product().____.model().inventory().____.____());
         return carts.stream().map(CartMapper.INSTANCE::toCartResponse).collect(Collectors.toList());
     }
 }
