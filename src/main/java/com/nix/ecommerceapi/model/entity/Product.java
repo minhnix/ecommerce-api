@@ -28,7 +28,7 @@ public class Product extends AbstractAuditing  {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
     private Long id;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
     @Column(name = "product_name", nullable = false)
@@ -48,7 +48,7 @@ public class Product extends AbstractAuditing  {
     private boolean isPublished = false;
     @JsonProperty("is_variant")
     private boolean isVariant = false;
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "product")
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "product", optional = false)
     private InventoryProduct inventoryProduct;
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Model> models = new ArrayList<>();

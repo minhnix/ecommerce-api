@@ -16,11 +16,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class InventoryProduct extends AbstractAuditing  {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inventory_product_id", nullable = false)
+    @MapsId
     private Product product;
     @Column(name = "inventory_location")
     private String location;

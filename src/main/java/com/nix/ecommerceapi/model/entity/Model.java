@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
 
 @Entity
 @Table(name = "models", uniqueConstraints = {
@@ -31,7 +30,7 @@ public class Model extends AbstractAuditing {
     private Long priceAfterDiscount;
     @Column(name = "model_combined_name")
     private String name;
-    @OneToOne(mappedBy = "model", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "model", fetch = FetchType.LAZY, optional = false)
     private Inventory inventory;
     @JsonIgnore
     @Column(name = "model_is_published")
