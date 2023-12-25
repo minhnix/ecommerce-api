@@ -22,14 +22,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-//TODO: do not register bean
-//@Bean
-//public FilterRegistrationBean<TenantFilter> tenantFilterRegistration(TenantFilter filter) {
-//    FilterRegistrationBean<TenantFilter> registration = new FilterRegistrationBean<>(filter);
-//    registration.setEnabled(false);
-//    return registration;
-//}
-
 @Component
 @Slf4j
 @RequiredArgsConstructor
