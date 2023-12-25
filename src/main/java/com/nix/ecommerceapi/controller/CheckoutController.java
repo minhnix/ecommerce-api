@@ -23,4 +23,10 @@ public class CheckoutController {
         if (user == null) throw new AuthFailureException("Full authentication to get resource");
         return checkoutService.checkoutReview(checkoutRequest, user);
     }
+
+    @PostMapping("/order")
+    public void order(@RequestBody CheckoutRequest checkoutRequest, @CurrentUser CustomUserDetails user) {
+        if (user == null) throw new AuthFailureException("Full authentication to get resource");
+        checkoutService.order(checkoutRequest, user);
+    }
 }

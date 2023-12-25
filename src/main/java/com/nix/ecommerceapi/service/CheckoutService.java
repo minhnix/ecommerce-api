@@ -6,4 +6,5 @@ import com.nix.ecommerceapi.security.CustomUserDetails;
 
 public interface CheckoutService {
     CheckoutResponse checkoutReview(CheckoutRequest checkoutRequest, CustomUserDetails user);
+    void order(CheckoutRequest checkoutRequest, CustomUserDetails user);
 }
