@@ -78,4 +78,17 @@ public class ProductController {
         return new ApiResponse(productService.findOneProduct(id, user), "Find one product", HttpStatus.OK.value());
     }
 
+    @GetMapping
+    public ApiResponse getAllProduct(
+            @RequestParam(value = "page", defaultValue = PageConstants.DEFAULT_PAGE_NUMBER) int page,
+            @RequestParam(value = "size", defaultValue = PageConstants.DEFAULT_PAGE_SIZE) int size,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "sortDir", required = false) String sortDir
+
+    ) {
+        //TODO: Impl personalization product by user
+        Pageable pageable = PageableUtils.getPageable(page, size, sortBy, sortDir);
+        PagedResponse<SimpleProductResponse> products = productService.findAllPublishProduct(pageable);
+        return new ApiResponse(products, "Product published", HttpStatus.OK.value());
+    }
 }

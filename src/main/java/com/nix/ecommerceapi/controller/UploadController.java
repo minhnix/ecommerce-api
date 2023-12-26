@@ -36,6 +36,7 @@ public class UploadController {
     }
 
     @DeleteMapping("/file/{public_id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SHOP')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFile(@PathVariable String public_id) {
         storageService.deleteFile(public_id);
