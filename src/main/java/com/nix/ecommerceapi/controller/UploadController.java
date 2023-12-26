@@ -25,8 +25,8 @@ public class UploadController {
         if (file.isEmpty()) {
             throw new BadRequestException("File is empty");
         }
-        String fileId = storageService.uploadFile(file.getInputStream(), folder);
-        return ResponseEntity.ok(Map.of("id", fileId));
+        Map<?, ?> result = storageService.uploadFile(file.getInputStream(), folder);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/file/{fileId}")
@@ -35,10 +35,10 @@ public class UploadController {
         return ResponseEntity.ok(Map.of("url", fileUrl));
     }
 
-    @DeleteMapping("/file/{fileId}")
+    @DeleteMapping("/file/{public_id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteFile(@PathVariable String fileId) {
-        storageService.deleteFile(fileId);
+    public void deleteFile(@PathVariable String public_id) {
+        storageService.deleteFile(public_id);
     }
 }
 

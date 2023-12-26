@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ public class CloudinaryStorageService implements StorageService {
     }
 
     @Override
-    public String uploadFile(InputStream inputStream, String folder) {
+    public Map<?, ?> uploadFile(InputStream inputStream, String folder) {
         try {
             Map<String, Object> params = new HashMap<>();
             if (folder != null) {
@@ -30,7 +31,10 @@ public class CloudinaryStorageService implements StorageService {
             File tempFile = createTempFile(inputStream);
             Map<?, ?> uploadResult = cloudinary.uploader().upload(tempFile, params);
             tempFile.delete();
-            return getAssetId(uploadResult);
+            Map<String, String> response = new HashMap<>();
+            response.put("fileId", getAssetId(uploadResult));
+            response.put("fileUrl", getSecureUrl(uploadResult));
+            return response;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -50,10 +54,10 @@ public class CloudinaryStorageService implements StorageService {
     }
 
     @Override
-    public void deleteFile(String fileId) {
+    public void deleteFile(String publicId) {
         try {
-            cloudinary.uploader().destroy(fileId, Map.of());
-        } catch (IOException e) {
+            cloudinary.api().deleteResources(Collections.singletonList(publicId), Map.of());
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
