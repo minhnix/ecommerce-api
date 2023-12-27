@@ -40,6 +40,7 @@ public class InventoryServiceImpl implements InventoryService {
             throw new BadRequestException("Stock is not enough");
         }
         inventory.setStock(inventory.getStock() - quantity);
+        inventory.setTotalSold(inventory.getTotalSold() + quantity);
         return inventoryRepository.save(inventory);
     }
 }

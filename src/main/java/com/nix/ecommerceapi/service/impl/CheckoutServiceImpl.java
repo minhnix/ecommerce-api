@@ -4,6 +4,7 @@ import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.model.dto.ItemProduct;
 import com.nix.ecommerceapi.model.entity.Inventory;
+import com.nix.ecommerceapi.model.entity.Order;
 import com.nix.ecommerceapi.model.request.CheckoutRequest;
 import com.nix.ecommerceapi.model.response.CartResponse;
 import com.nix.ecommerceapi.model.response.CheckoutResponse;
@@ -22,6 +23,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final DiscountService discountService;
     private final RedisService redisService;
     private final InventoryService inventoryService;
+    private final OrderService orderService;
 
     @Override
     public CheckoutResponse checkoutReview(CheckoutRequest checkoutRequest, CustomUserDetails user) {
@@ -43,15 +45,18 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Override
     @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class,})
     public void order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
+        if (checkoutRequest.getPayment() == null)
+            throw new BadRequestException("No payment method choose");
+        if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())
+            throw new BadRequestException("Address is empty");
         CheckoutResponse checkoutResponse = checkoutReview(checkoutRequest, user);
+        int maxAttempts = 10, sleepDuration = 50, expireTime = 1500;
         checkoutResponse.getProducts().forEach(
                 cartResponse -> {
-                    int maxAttempts = 10;
-                    long sleepDuration = 50;
                     Boolean result = false;
                     String keyLock = "Lock:Inventory:" + cartResponse.getProduct().getModelId();
                     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-                        result = redisService.acquireLock(keyLock, 1500);
+                        result = redisService.acquireLock(keyLock, expireTime);
                         if (result) {
                             Inventory inventory = inventoryService.processOrderAndSaveInventory(cartResponse.getProduct().getModelId(), cartResponse.getQuantity());
                             redisService.releaseLock(keyLock);
@@ -69,6 +74,13 @@ public class CheckoutServiceImpl implements CheckoutService {
                     }
                 }
         );
+
+        Order order = orderService.createOrder(checkoutResponse, user, checkoutRequest.getAddress(), checkoutRequest.getPayment());
+        if (order.getId() != null) {
+            checkoutResponse.getProducts().forEach(
+                    cartResponse -> cartService.deleteCart(cartResponse.getId(), user)
+            );
+        }
     }
 
     private void waitForDuration(long sleepDuration) {
@@ -80,7 +92,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     private List<CartResponse> checkAndGetProductAvailable(List<ItemProduct> itemProducts, List<CartResponse> cartResponses) {
-        if (itemProducts.isEmpty()) throw new BadRequestException("Order wrong");
+        if (itemProducts.isEmpty()) throw new BadRequestException("No product to review checkout");
         return itemProducts.stream().map(
                 itemProduct -> {
                     CartResponse cartResponse = cartResponses.stream().filter(

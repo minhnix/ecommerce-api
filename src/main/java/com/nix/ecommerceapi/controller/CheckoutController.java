@@ -3,6 +3,7 @@ package com.nix.ecommerceapi.controller;
 import com.nix.ecommerceapi.annotation.CurrentUser;
 import com.nix.ecommerceapi.exception.AuthFailureException;
 import com.nix.ecommerceapi.model.request.CheckoutRequest;
+import com.nix.ecommerceapi.model.response.ApiResponse;
 import com.nix.ecommerceapi.model.response.CheckoutResponse;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.CheckoutService;
@@ -25,8 +26,9 @@ public class CheckoutController {
     }
 
     @PostMapping("/order")
-    public void order(@RequestBody CheckoutRequest checkoutRequest, @CurrentUser CustomUserDetails user) {
+    public ApiResponse order(@RequestBody CheckoutRequest checkoutRequest, @CurrentUser CustomUserDetails user) {
         if (user == null) throw new AuthFailureException("Full authentication to get resource");
         checkoutService.order(checkoutRequest, user);
+        return ApiResponse.successWithOutMetadata("Order successfully");
     }
 }

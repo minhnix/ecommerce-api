@@ -11,4 +11,6 @@ import java.util.List;
 public class CheckoutRequest {
     private List<ItemProduct> itemProducts;
     private Long discountId;
+    private String address;
+    private String payment;
 }
