@@ -27,6 +27,19 @@ public class ApiResponse {
         this.metadata = metadata;
     }
 
+    public ApiResponse(String message, int code ) {
+        this.message = message;
+        this.code = code;
+    }
+
+    public static ApiResponse success(Object metadata, String message) {
+        return new ApiResponse(metadata, message, 200);
+    }
+
+    public static ApiResponse successWithOutMetadata(String message) {
+        return new ApiResponse(message, 200);
+    }
+
     public String getMessage() {
         return message;
     }
