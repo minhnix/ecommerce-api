@@ -9,6 +9,8 @@ import lombok.Setter;
 @Setter
 public class PaymentDTO {
     @NotNull
+    private Long orderId;
+    @NotNull
     private Long amount;
     @NotNull
     private PaymentType paymentType;
