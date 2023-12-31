@@ -26,42 +26,48 @@ public class VNPayPaymentService implements PaymentService {
         return pay(payDTO);
     }
 
-//    public Object ipnUrl(HttpServletRequest request) {
-//        Map<String, String> fields = getParamFromRequest(request);
-//        String vnp_SecureHash = request.getParameter("vnp_SecureHash");
-//        String signValue = Config.hashAllFields(fields);
-//        if (signValue.equals(vnp_SecureHash)) {
-//
-//            boolean checkOrderId = true; // vnp_TxnRef exists in your database
-//            boolean checkAmount = true; // vnp_Amount is valid (Check vnp_Amount VNPAY returns compared to the amount of the code (vnp_TxnRef) in the Your database).
-//            boolean checkOrderStatus = true; // PaymnentStatus = 0 (pending)
-//
-//            if (checkOrderId) {
-//                if (checkAmount) {
-//                    if (checkOrderStatus) {
-//                        if ("00".equals(request.getParameter("vnp_ResponseCode"))) {
-//
-//                            //Here Code update PaymnentStatus = 1 into your Database
-//                        } else {
-//
-//                            // Here Code update PaymnentStatus = 2 into your Database
-//                        }
-////                        out.print("{\"RspCode\":\"00\",\"Message\":\"Confirm Success\"}");
-//                    } else {
-//
-////                        out.print("{\"RspCode\":\"02\",\"Message\":\"Order already confirmed\"}");
-//                    }
-//                } else {
-////                    out.print("{\"RspCode\":\"04\",\"Message\":\"Invalid Amount\"}");
-//                }
-//            } else {
-////                out.print("{\"RspCode\":\"01\",\"Message\":\"Order not Found\"}");
-//            }
-//        } else {
-////            out.print("{\"RspCode\":\"97\",\"Message\":\"Invalid Checksum\"}");
-//        }
-//        return null;
-//    }
+    public Object ipnUrl(HttpServletRequest request) {
+        PaymentResponse paymentResponse = new PaymentResponse();
+        try {
+            Map<String, String> fields = getParamFromRequest(request);
+            String vnp_SecureHash = request.getParameter("vnp_SecureHash");
+            String signValue = SecurityUtils.hashAllFields(fields, vnpayProperties.getHashSecret());
+            if (signValue.equals(vnp_SecureHash)) {
+                boolean checkOrderId = true; // vnp_TxnRef exists in your database
+                boolean checkAmount = true; // vnp_Amount is valid (Check vnp_Amount VNPAY returns compared to the amount of the code (vnp_TxnRef) in the Your database).
+                boolean checkOrderStatus = true; // PaymnentStatus = 0 (pending)
+                if (checkOrderId) {
+                    if (checkAmount) {
+                        if (checkOrderStatus) {
+                            if ("00".equals(request.getParameter("vnp_ResponseCode"))) {
+                                //Here Code update PaymnentStatus = 1 into your Database
+                            } else {
+                                // Here Code update PaymnentStatus = 2 into your Database
+                            }
+                            paymentResponse.setMessage("Confirm Success");
+                            paymentResponse.setCode("00");
+                        } else {
+                            paymentResponse.setCode("02");
+                            paymentResponse.setMessage("Order already confirmed");
+                        }
+                    } else {
+                        paymentResponse.setCode("04");
+                        paymentResponse.setMessage("Invalid Amount");
+                    }
+                } else {
+                    paymentResponse.setCode("01");
+                    paymentResponse.setMessage("Order not found");
+                }
+            } else {
+                paymentResponse.setCode("97");
+                paymentResponse.setMessage("Invalid Checksum");
+            }
+        } catch (Exception e) {
+            paymentResponse.setCode("99");
+            paymentResponse.setMessage("Unknow error");
+        }
+        return paymentResponse;
+    }
 
     public Object returnUrl(HttpServletRequest request) {
         Map<String, String> vnpParams = getParamFromRequest(request);

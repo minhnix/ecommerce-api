@@ -18,6 +18,6 @@ public class VNPayProperties {
     private String orderType = "250000"; // Danh mục hàng hoá VNPAY thời trang
     private String tmnCode;
     private String hashSecret;
-    private String returnUrl = "http://localhost:8080/api/v1/payment/pay-result"; // redirect to url after payment
+    private String returnUrl = "http://localhost:8080/api/v1/payment/vnpay/result"; // redirect to url after payment
     private String payUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 }

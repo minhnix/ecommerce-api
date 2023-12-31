@@ -6,6 +6,7 @@ import com.nix.ecommerceapi.model.dto.payment.VNPayDTO;
 import com.nix.ecommerceapi.service.payment.PaymentFactory;
 import com.nix.ecommerceapi.service.payment.PaymentType;
 import com.nix.ecommerceapi.service.payment.impl.VNPayPaymentService;
+import com.nix.ecommerceapi.utils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class PaymentController {
         if (paymentDTO.getPaymentType() == PaymentType.VNPAY) {
             VNPayDTO vnPayDTO = new VNPayDTO();
             vnPayDTO.setAmount(paymentDTO.getAmount());
-            vnPayDTO.setIpAddress(getIpAddress(request));
+            vnPayDTO.setIpAddress(WebUtils.getIpAddress(request));
             vnPayDTO.setOrderId(paymentDTO.getOrderId());
             String result = (String) paymentFactory.create(paymentDTO.getPaymentType()).pay(vnPayDTO);
             return ResponseEntity.ok(result);
@@ -31,24 +32,17 @@ public class PaymentController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/pay-result")
+    @GetMapping("/vnpay/result")
     public ResponseEntity<?> payResult(HttpServletRequest request) {
         VNPayPaymentService vnPayPaymentService = (VNPayPaymentService) paymentFactory.create(PaymentType.VNPAY);
         PaymentResponse paymentResponse = (PaymentResponse) vnPayPaymentService.returnUrl(request);
         return ResponseEntity.ok(paymentResponse);
     }
 
-    public static String getIpAddress(HttpServletRequest request) {
-        String ipAdress;
-        try {
-            ipAdress = request.getHeader("X-FORWARDED-FOR");
-            if (ipAdress == null) {
-                ipAdress = request.getRemoteAddr();
-            }
-        } catch (Exception e) {
-            ipAdress = "Invalid IP:" + e.getMessage();
-        }
-        return ipAdress;
+    @GetMapping("/ipn/vnpay")
+    public ResponseEntity<?> ipnUrl(HttpServletRequest request) {
+        VNPayPaymentService vnPayPaymentService = (VNPayPaymentService) paymentFactory.create(PaymentType.VNPAY);
+        Object result = vnPayPaymentService.ipnUrl(request);
+        return ResponseEntity.ok(result);
     }
-
 }
