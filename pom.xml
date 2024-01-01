@@ -51,6 +51,7 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-jpamodelgen</artifactId>
+            <version>6.1.7.Final</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -190,6 +191,16 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok-mapstruct-binding</artifactId>
                             <version>0.2.0</version>
+                        </path>
+                        <path>
+                            <groupId>org.hibernate</groupId>
+                            <artifactId>hibernate-jpamodelgen</artifactId>
+                            <version>6.1.7.Final</version>
+                        </path>
+                        <path>
+                            <groupId>com.cosium.spring.data</groupId>
+                            <artifactId>spring-data-jpa-entity-graph-generator</artifactId>
+                            <version>${spring-data-jpa-entity-graph.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
