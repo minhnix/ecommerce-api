@@ -32,6 +32,8 @@ public class Order extends AbstractAuditing {
     private String address;
     private String note;
     private String trackingNumber;
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY, optional = false)
+    private Payment payment;
     @OneToMany(mappedBy = "order")
     private List<OrderDetail> orderDetails = new ArrayList<>();
 }

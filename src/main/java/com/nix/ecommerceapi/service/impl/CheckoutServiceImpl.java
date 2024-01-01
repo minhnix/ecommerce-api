@@ -43,8 +43,9 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class,})
+    @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class})
     public void order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
+        //TODO: fixed order price with x.xx
         if (checkoutRequest.getPayment() == null)
             throw new BadRequestException("No payment method choose");
         if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())

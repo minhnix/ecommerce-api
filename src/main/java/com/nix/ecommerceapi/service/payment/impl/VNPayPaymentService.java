@@ -1,14 +1,25 @@
 package com.nix.ecommerceapi.service.payment.impl;
 
 import com.nix.ecommerceapi.config.VNPayProperties;
+import com.nix.ecommerceapi.exception.AuthFailureException;
+import com.nix.ecommerceapi.exception.BadRequestException;
+import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.model.dto.payment.PaymentDTO;
 import com.nix.ecommerceapi.model.dto.payment.PaymentResponse;
 import com.nix.ecommerceapi.model.dto.payment.VNPayDTO;
+import com.nix.ecommerceapi.model.entity.Order;
+import com.nix.ecommerceapi.model.entity.Payment;
+import com.nix.ecommerceapi.model.enumuration.OrderStatus;
+import com.nix.ecommerceapi.repository.OrderRepository;
+import com.nix.ecommerceapi.repository.PaymentRepository;
+import com.nix.ecommerceapi.security.CustomUserDetails;
+import com.nix.ecommerceapi.service.OrderService;
 import com.nix.ecommerceapi.service.payment.PaymentService;
 import com.nix.ecommerceapi.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -19,11 +30,31 @@ import java.util.*;
 @AllArgsConstructor
 public class VNPayPaymentService implements PaymentService {
     private final VNPayProperties vnpayProperties;
+    private final OrderService orderService;
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
-    public Object pay(PaymentDTO paymentDTO) {
+    @Transactional
+    public Object pay(PaymentDTO paymentDTO, CustomUserDetails user) {
         VNPayDTO payDTO = (VNPayDTO) paymentDTO;
-        return pay(payDTO);
+        Order order = orderRepository.findById(payDTO.getOrderId())
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new AuthFailureException("Full authentication is required to access this resource");
+        }
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Failed");
+        }
+        if (!order.getTotalCheckoutPrice().equals(payDTO.getAmount())) {
+            throw new BadRequestException("Failed");
+        }
+        return this.pay(payDTO);
+    }
+
+    @Override
+    public Payment save(Payment payment) {
+        return paymentRepository.save(payment);
     }
 
     public Object ipnUrl(HttpServletRequest request) {
@@ -33,9 +64,10 @@ public class VNPayPaymentService implements PaymentService {
             String vnp_SecureHash = request.getParameter("vnp_SecureHash");
             String signValue = SecurityUtils.hashAllFields(fields, vnpayProperties.getHashSecret());
             if (signValue.equals(vnp_SecureHash)) {
-                boolean checkOrderId = true; // vnp_TxnRef exists in your database
-                boolean checkAmount = true; // vnp_Amount is valid (Check vnp_Amount VNPAY returns compared to the amount of the code (vnp_TxnRef) in the Your database).
-                boolean checkOrderStatus = true; // PaymnentStatus = 0 (pending)
+                boolean checkOrderId = false; // vnp_TxnRef exists in your database
+                boolean checkAmount = false; // vnp_Amount is valid (Check vnp_Amount VNPAY returns compared to the amount of the code (vnp_TxnRef) in the Your database).
+                boolean checkOrderStatus = false; // PaymnentStatus = 0 (pending)
+
                 if (checkOrderId) {
                     if (checkAmount) {
                         if (checkOrderStatus) {
@@ -97,7 +129,21 @@ public class VNPayPaymentService implements PaymentService {
         String hashData = buildHashData(vnp_Params, fieldNames);
         String vnp_SecureHash = SecurityUtils.hmacSHA512(vnpayProperties.getHashSecret(), hashData);
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
+        this.savePayment(vnPayDTO, vnp_Params);
         return vnpayProperties.getPayUrl() + "?" + queryUrl; // payment url
+    }
+
+    private Payment savePayment(VNPayDTO vnPayDTO, Map<String, String> vnp_Params) {
+        Payment payment = Payment.builder()
+                .paymentStatus(Payment.PaymentStatus.PENDING)
+                .paymentType(Payment.PaymentType.VNPAY)
+                .paymentMethod(Payment.PaymentMethod.TRANSFER)
+                .paymentId(vnp_Params.get("vnp_TxnRef"))
+                .transactionDate(vnp_Params.get("vnp_CreateDate"))
+                .order(orderRepository.getReferenceById(vnPayDTO.getOrderId()))
+                .amount(vnPayDTO.getAmount())
+                .build();
+        return this.save(payment);
     }
 
     private Map<String, String> getParamFromRequest(HttpServletRequest request) {
@@ -161,7 +207,8 @@ public class VNPayPaymentService implements PaymentService {
         if (vnPayDTO.getBankCode() != null && vnPayDTO.getBankCode().isEmpty()) {
             vnp_Params.put("vnp_BankCode", vnPayDTO.getBankCode());
         }
-        vnp_Params.put("vnp_TxnRef", vnPayDTO.getOrderId().toString() + getRandom(8));
+        String vnp_TxnRef = vnPayDTO.getOrderId().toString() + getRandom(8);
+        vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", vnpayProperties.getOrderInfo());
         vnp_Params.put("vnp_OrderType", vnpayProperties.getOrderType());
         if (vnPayDTO.getLanguage() != null && !vnPayDTO.getLanguage().isEmpty()) {

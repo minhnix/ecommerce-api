@@ -1,6 +1,6 @@
 package com.nix.ecommerceapi.model.dto.payment;
 
-import com.nix.ecommerceapi.service.payment.PaymentType;
+import com.nix.ecommerceapi.model.entity.Payment;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +11,7 @@ public class PaymentDTO {
     @NotNull
     private Long orderId;
     @NotNull
-    private Long amount;
+    private Double amount;
     @NotNull
-    private PaymentType paymentType;
+    private Payment.PaymentType paymentType;
 }

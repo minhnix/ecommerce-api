@@ -1,8 +1,8 @@
 package com.nix.ecommerceapi.service.payment.impl;
 
+import com.nix.ecommerceapi.model.entity.Payment;
 import com.nix.ecommerceapi.service.payment.PaymentFactory;
 import com.nix.ecommerceapi.service.payment.PaymentService;
-import com.nix.ecommerceapi.service.payment.PaymentType;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,7 +16,7 @@ public class PaymentFactoryImpl implements PaymentFactory {
     }
 
     @Override
-    public PaymentService create(PaymentType paymentType) {
+    public PaymentService create(Payment.PaymentType paymentType) {
         return switch (paymentType) {
             case ZALO -> getPaymentService(ZaloPaymentService.class);
             case VNPAY -> getPaymentService(VNPayPaymentService.class);
