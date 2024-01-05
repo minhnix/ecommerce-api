@@ -8,10 +8,11 @@ import com.nix.ecommerceapi.model.dto.payment.VNPayDTO;
 import com.nix.ecommerceapi.model.entity.Order;
 import com.nix.ecommerceapi.model.entity.OrderEntityGraph;
 import com.nix.ecommerceapi.model.entity.Payment;
+import com.nix.ecommerceapi.model.entity.PaymentEntityGraph;
+import com.nix.ecommerceapi.model.enumuration.OrderStatus;
 import com.nix.ecommerceapi.repository.OrderRepository;
 import com.nix.ecommerceapi.repository.PaymentRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
-import com.nix.ecommerceapi.service.OrderService;
 import com.nix.ecommerceapi.service.payment.PaymentService;
 import com.nix.ecommerceapi.service.payment.PaymentValidator;
 import com.nix.ecommerceapi.utils.SecurityUtils;
@@ -29,7 +30,6 @@ import java.util.*;
 @AllArgsConstructor
 public class VNPayPaymentService implements PaymentService {
     private final VNPayProperties vnpayProperties;
-    private final OrderService orderService;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
 
@@ -48,27 +48,39 @@ public class VNPayPaymentService implements PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public Object ipnUrl(HttpServletRequest request) {
+    public Object handleIpnUrl(HttpServletRequest request) {
         PaymentResponse paymentResponse = new PaymentResponse();
         try {
             Map<String, String> fields = getParamFromRequest(request);
             String vnp_SecureHash = request.getParameter("vnp_SecureHash");
             String signValue = SecurityUtils.hashAllFields(fields, vnpayProperties.getHashSecret());
             if (signValue.equals(vnp_SecureHash)) {
-                boolean checkOrderId = false; // vnp_TxnRef exists in your database
-                boolean checkAmount = false; // vnp_Amount is valid (Check vnp_Amount VNPAY returns compared to the amount of the code (vnp_TxnRef) in the Your database).
-                boolean checkOrderStatus = false; // PaymnentStatus = 0 (pending)
+                Payment payment = paymentRepository.findByPaymentId(
+                                request.getParameter("vnp_TxnRef"),
+                                PaymentEntityGraph.____().order().____.____())
+                        .orElseThrow(() -> new NotFoundException("Payment not found"));
+                boolean checkOrderId = payment.getOrder().getId() != null;
+                double amount = payment.getAmount() * 100;
+                long vnp_Amount = Long.parseLong(request.getParameter("vnp_Amount"));
+                boolean checkAmount = (long) amount == vnp_Amount;
+                boolean checkOrderStatus = true;
+                if (payment.getPaymentMethod() != Payment.PaymentMethod.COD) {
+                    checkOrderStatus = payment.getOrder().getStatus() == OrderStatus.PENDING;
+                }
 
                 if (checkOrderId) {
                     if (checkAmount) {
                         if (checkOrderStatus) {
                             if ("00".equals(request.getParameter("vnp_ResponseCode"))) {
-                                //Here Code update PaymnentStatus = 1 into your Database
+                                payment.setPaymentStatus(Payment.PaymentStatus.SUCCESS);
+                                payment.getOrder().setStatus(OrderStatus.PROCESSING);
                             } else {
-                                // Here Code update PaymnentStatus = 2 into your Database
+                                payment.setPaymentStatus(Payment.PaymentStatus.FAILED);
                             }
                             paymentResponse.setMessage("Confirm Success");
                             paymentResponse.setCode("00");
+                            payment.setTransactionId(request.getParameter("vnp_TransactionNo"));
+                            paymentRepository.save(payment);
                         } else {
                             paymentResponse.setCode("02");
                             paymentResponse.setMessage("Order already confirmed");

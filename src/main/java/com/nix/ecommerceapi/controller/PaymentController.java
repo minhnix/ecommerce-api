@@ -44,7 +44,7 @@ public class PaymentController {
     @GetMapping("/ipn/vnpay")
     public ResponseEntity<?> ipnUrl(HttpServletRequest request) {
         VNPayPaymentService vnPayPaymentService = (VNPayPaymentService) paymentFactory.create(Payment.PaymentType.VNPAY);
-        Object result = vnPayPaymentService.ipnUrl(request);
+        Object result = vnPayPaymentService.handleIpnUrl(request);
         return ResponseEntity.ok(result);
     }
 }
