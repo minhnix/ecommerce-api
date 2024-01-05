@@ -21,6 +21,7 @@ public class InventoryServiceImpl implements InventoryService {
         Inventory inventory = new Inventory();
         inventory.setModel(model);
         inventory.setStock(stock);
+        inventory.setTotalSold(0L);
         return inventoryRepository.save(inventory);
     }
 

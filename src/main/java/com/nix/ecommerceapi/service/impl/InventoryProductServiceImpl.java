@@ -2,7 +2,6 @@ package com.nix.ecommerceapi.service.impl;
 
 import com.nix.ecommerceapi.model.entity.InventoryProduct;
 import com.nix.ecommerceapi.model.entity.Product;
-import com.nix.ecommerceapi.model.request.ProductRequest;
 import com.nix.ecommerceapi.repository.InventoryProductRepository;
 import com.nix.ecommerceapi.service.InventoryProductService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +24,7 @@ public class InventoryProductServiceImpl implements InventoryProductService {
         inventoryProduct.setStock(stock1);
         inventoryProduct.setLocation("unknown");
         inventoryProduct.setProduct(product);
+        inventoryProduct.setTotalSold(0L);
         return inventoryProductRepository.save(inventoryProduct);
     }
 }
