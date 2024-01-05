@@ -23,9 +23,8 @@ public class Payment {
     private PaymentType paymentType;
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
-    @Column(name = "payment_id", nullable = false, unique = true)
+    @Column(name = "payment_id", unique = true)
     private String paymentId;
-    @Column(nullable = false)
     private String transactionDate;
     private String transactionId;
     @Column(nullable = false)

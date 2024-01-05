@@ -46,12 +46,12 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class})
-    public void order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
+    public Order order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
         //TODO: fixed order price with x.xx
         if (checkoutRequest.getPaymentMethod() == null)
             throw new BadRequestException("No payment method choose");
         if (checkoutRequest.getPaymentMethod() == Payment.PaymentMethod.TRANSFER &&
-            checkoutRequest.getPaymentType() == null
+                checkoutRequest.getPaymentType() == null
         ) {
             throw new BadRequestException("No payment type choose");
         }
@@ -89,11 +89,10 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .userId(user.getId())
                 .build();
         Order order = orderService.createOrder(checkoutResponse, orderInfo);
-        if (order.getId() != null) {
-            checkoutResponse.getProducts().forEach(
-                    cartResponse -> cartService.deleteCart(cartResponse.getId(), user)
-            );
-        }
+        checkoutResponse.getProducts().forEach(cartResponse ->
+                cartService.deleteCart(cartResponse.getId(), user)
+        );
+        return order;
     }
 
     private void waitForDuration(long sleepDuration) {

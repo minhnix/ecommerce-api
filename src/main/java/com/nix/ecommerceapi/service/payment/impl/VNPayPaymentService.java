@@ -1,20 +1,19 @@
 package com.nix.ecommerceapi.service.payment.impl;
 
 import com.nix.ecommerceapi.config.VNPayProperties;
-import com.nix.ecommerceapi.exception.AuthFailureException;
-import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.model.dto.payment.PaymentDTO;
 import com.nix.ecommerceapi.model.dto.payment.PaymentResponse;
 import com.nix.ecommerceapi.model.dto.payment.VNPayDTO;
 import com.nix.ecommerceapi.model.entity.Order;
+import com.nix.ecommerceapi.model.entity.OrderEntityGraph;
 import com.nix.ecommerceapi.model.entity.Payment;
-import com.nix.ecommerceapi.model.enumuration.OrderStatus;
 import com.nix.ecommerceapi.repository.OrderRepository;
 import com.nix.ecommerceapi.repository.PaymentRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.OrderService;
 import com.nix.ecommerceapi.service.payment.PaymentService;
+import com.nix.ecommerceapi.service.payment.PaymentValidator;
 import com.nix.ecommerceapi.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -38,18 +37,10 @@ public class VNPayPaymentService implements PaymentService {
     @Transactional
     public Object pay(PaymentDTO paymentDTO, CustomUserDetails user) {
         VNPayDTO payDTO = (VNPayDTO) paymentDTO;
-        Order order = orderRepository.findById(payDTO.getOrderId())
+        Order order = orderRepository.findById(payDTO.getOrderId(), OrderEntityGraph.____().payment().____.____())
                 .orElseThrow(() -> new NotFoundException("Order not found"));
-        if (!order.getUser().getId().equals(user.getId())) {
-            throw new AuthFailureException("Full authentication is required to access this resource");
-        }
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw new BadRequestException("Failed");
-        }
-        if (!order.getTotalCheckoutPrice().equals(payDTO.getAmount())) {
-            throw new BadRequestException("Failed");
-        }
-        return this.pay(payDTO);
+        PaymentValidator.validate(order, payDTO, user.getId());
+        return this.pay(order.getPayment(), payDTO);
     }
 
     @Override
@@ -121,7 +112,7 @@ public class VNPayPaymentService implements PaymentService {
         return paymentResponse;
     }
 
-    private String pay(VNPayDTO vnPayDTO) {
+    private String pay(Payment payment, VNPayDTO vnPayDTO) {
         Map<String, String> vnp_Params = setAndGetVnpParams(vnPayDTO);
         List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
         Collections.sort(fieldNames);
@@ -129,20 +120,13 @@ public class VNPayPaymentService implements PaymentService {
         String hashData = buildHashData(vnp_Params, fieldNames);
         String vnp_SecureHash = SecurityUtils.hmacSHA512(vnpayProperties.getHashSecret(), hashData);
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-        this.savePayment(vnPayDTO, vnp_Params);
+        this.updatePayment(payment, vnp_Params);
         return vnpayProperties.getPayUrl() + "?" + queryUrl; // payment url
     }
 
-    private Payment savePayment(VNPayDTO vnPayDTO, Map<String, String> vnp_Params) {
-        Payment payment = Payment.builder()
-                .paymentStatus(Payment.PaymentStatus.PENDING)
-                .paymentType(Payment.PaymentType.VNPAY)
-                .paymentMethod(Payment.PaymentMethod.TRANSFER)
-                .paymentId(vnp_Params.get("vnp_TxnRef"))
-                .transactionDate(vnp_Params.get("vnp_CreateDate"))
-                .order(orderRepository.getReferenceById(vnPayDTO.getOrderId()))
-                .amount(vnPayDTO.getAmount())
-                .build();
+    private Payment updatePayment(Payment payment, Map<String, String> vnp_Params) {
+        payment.setPaymentId(vnp_Params.get("vnp_TxnRef"));
+        payment.setTransactionDate(vnp_Params.get("vnp_CreateDate"));
         return this.save(payment);
     }
 
@@ -202,7 +186,8 @@ public class VNPayPaymentService implements PaymentService {
         vnp_Params.put("vnp_Version", vnpayProperties.getVersion());
         vnp_Params.put("vnp_Command", vnpayProperties.getCommand());
         vnp_Params.put("vnp_TmnCode", vnpayProperties.getTmnCode());
-        vnp_Params.put("vnp_Amount", String.valueOf(vnPayDTO.getAmount() * 100));
+        double amount = vnPayDTO.getAmount() * 100;
+        vnp_Params.put("vnp_Amount", String.valueOf((long) amount));
         vnp_Params.put("vnp_CurrCode", vnpayProperties.getCurrCode());
         if (vnPayDTO.getBankCode() != null && vnPayDTO.getBankCode().isEmpty()) {
             vnp_Params.put("vnp_BankCode", vnPayDTO.getBankCode());
