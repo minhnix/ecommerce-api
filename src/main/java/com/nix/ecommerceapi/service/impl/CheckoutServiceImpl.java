@@ -3,8 +3,10 @@ package com.nix.ecommerceapi.service.impl;
 import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.model.dto.ItemProduct;
+import com.nix.ecommerceapi.model.dto.OrderInfo;
 import com.nix.ecommerceapi.model.entity.Inventory;
 import com.nix.ecommerceapi.model.entity.Order;
+import com.nix.ecommerceapi.model.entity.Payment;
 import com.nix.ecommerceapi.model.request.CheckoutRequest;
 import com.nix.ecommerceapi.model.response.CartResponse;
 import com.nix.ecommerceapi.model.response.CheckoutResponse;
@@ -46,8 +48,13 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class})
     public void order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
         //TODO: fixed order price with x.xx
-        if (checkoutRequest.getPayment() == null)
+        if (checkoutRequest.getPaymentMethod() == null)
             throw new BadRequestException("No payment method choose");
+        if (checkoutRequest.getPaymentMethod() == Payment.PaymentMethod.TRANSFER &&
+            checkoutRequest.getPaymentType() == null
+        ) {
+            throw new BadRequestException("No payment type choose");
+        }
         if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())
             throw new BadRequestException("Address is empty");
         CheckoutResponse checkoutResponse = checkoutReview(checkoutRequest, user);
@@ -75,8 +82,13 @@ public class CheckoutServiceImpl implements CheckoutService {
                     }
                 }
         );
-
-        Order order = orderService.createOrder(checkoutResponse, user, checkoutRequest.getAddress(), checkoutRequest.getPayment());
+        OrderInfo orderInfo = OrderInfo.builder()
+                .address(checkoutRequest.getAddress())
+                .paymentType(checkoutRequest.getPaymentType())
+                .paymentMethod(checkoutRequest.getPaymentMethod())
+                .userId(user.getId())
+                .build();
+        Order order = orderService.createOrder(checkoutResponse, orderInfo);
         if (order.getId() != null) {
             checkoutResponse.getProducts().forEach(
                     cartResponse -> cartService.deleteCart(cartResponse.getId(), user)
