@@ -4,7 +4,6 @@ import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.model.dto.ItemProduct;
 import com.nix.ecommerceapi.model.dto.OrderInfo;
-import com.nix.ecommerceapi.model.entity.Inventory;
 import com.nix.ecommerceapi.model.entity.Order;
 import com.nix.ecommerceapi.model.entity.Payment;
 import com.nix.ecommerceapi.model.request.CheckoutRequest;
@@ -23,7 +22,6 @@ import java.util.List;
 public class CheckoutServiceImpl implements CheckoutService {
     private final CartService cartService;
     private final DiscountService discountService;
-    private final RedisService redisService;
     private final InventoryService inventoryService;
     private final OrderService orderService;
 
@@ -37,7 +35,10 @@ public class CheckoutServiceImpl implements CheckoutService {
         CheckoutResponse checkoutResponse = new CheckoutResponse();
         checkoutResponse.setProducts(products);
         checkoutResponse.calculateTotalPrice();
-        checkoutResponse.setTotalDiscount(discountService.applyDiscount(checkoutRequest.getDiscountId(), user, checkoutResponse.getTotalPrice()));
+        Double totalDiscount = (checkoutRequest.getDiscountId() != null) ?
+                discountService.applyDiscount(checkoutRequest.getDiscountId(), user, checkoutResponse.getTotalPrice()) : 0.0;
+        checkoutResponse.setTotalDiscount(totalDiscount);
+        checkoutResponse.setDiscountIdUsed(checkoutRequest.getDiscountId());
         checkoutResponse.setDiscountIdUsed(checkoutRequest.getDiscountId());
         checkoutResponse.setTotalShippingCost(calculateShippingCost());
         checkoutResponse.calculateTotalCheckoutPrice();
@@ -58,29 +59,8 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())
             throw new BadRequestException("Address is empty");
         CheckoutResponse checkoutResponse = checkoutReview(checkoutRequest, user);
-        int maxAttempts = 10, sleepDuration = 50, expireTime = 1500;
         checkoutResponse.getProducts().forEach(
-                cartResponse -> {
-                    Boolean result = false;
-                    String keyLock = "Lock:Inventory:" + cartResponse.getProduct().getModelId();
-                    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-                        result = redisService.acquireLock(keyLock, expireTime);
-                        if (result) {
-                            Inventory inventory = inventoryService.processOrderAndSaveInventory(cartResponse.getProduct().getModelId(), cartResponse.getQuantity());
-                            redisService.releaseLock(keyLock);
-                            if (inventory == null) {
-                                throw new BadRequestException("Order failed");
-                            }
-                            break;
-                        } else {
-                            waitForDuration(sleepDuration);
-                        }
-                    }
-
-                    if (!result) {
-                        throw new BadRequestException("Order failed");
-                    }
-                }
+                cartResponse -> inventoryService.processOrderAndSaveInventory(cartResponse.getProduct().getModelId(), cartResponse.getQuantity())
         );
         OrderInfo orderInfo = OrderInfo.builder()
                 .address(checkoutRequest.getAddress())
@@ -89,18 +69,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .userId(user.getId())
                 .build();
         Order order = orderService.createOrder(checkoutResponse, orderInfo);
-        checkoutResponse.getProducts().forEach(cartResponse ->
-                cartService.deleteCart(cartResponse.getId(), user)
-        );
+        checkoutResponse.getProducts().forEach(cartResponse -> cartService.deleteCart(cartResponse.getId(), user));
         return order;
-    }
-
-    private void waitForDuration(long sleepDuration) {
-        try {
-            Thread.sleep(sleepDuration);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     private List<CartResponse> checkAndGetProductAvailable(List<ItemProduct> itemProducts, List<CartResponse> cartResponses) {

@@ -1,19 +1,12 @@
 package com.nix.ecommerceapi.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import lombok.*;
 
 
 @Entity
 @Table(name = "inventories")
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
+@Data
 public class Inventory extends AbstractAuditing  {
     @Id
     private Long id;
@@ -24,4 +17,6 @@ public class Inventory extends AbstractAuditing  {
     private Long stock;
     @Column(name = "total_sold")
     private Long totalSold;
+    @Version
+    private Long version;
 }

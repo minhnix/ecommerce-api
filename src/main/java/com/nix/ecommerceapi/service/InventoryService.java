@@ -6,5 +6,5 @@ import com.nix.ecommerceapi.model.entity.Model;
 public interface InventoryService {
     Inventory createInventory(Model model, Long stock);
     Inventory updateInventory(Long id, Long newStock);
-    Inventory processOrderAndSaveInventory(Long modelId, Long quantity);
+    void processOrderAndSaveInventory(Long modelId, Long quantity);
 }
