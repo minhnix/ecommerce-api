@@ -17,6 +17,4 @@ public class Inventory extends AbstractAuditing  {
     private Long stock;
     @Column(name = "total_sold")
     private Long totalSold;
-    @Version
-    private Long version;
 }

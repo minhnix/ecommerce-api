@@ -7,11 +7,14 @@ import com.nix.ecommerceapi.model.entity.Model;
 import com.nix.ecommerceapi.repository.InventoryRepository;
 import com.nix.ecommerceapi.service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InventoryServiceImpl implements InventoryService {
     private final InventoryRepository inventoryRepository;
 
@@ -34,9 +37,9 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processOrderAndSaveInventory(Long modelId, Long quantity) {
-        Inventory inventory = inventoryRepository.findByIdForUpdate(modelId).orElseThrow(() -> new NotFoundException("Inventory not found"));
+        Inventory inventory = inventoryRepository.getByIdAndObtainPessimisticWriteLocking(modelId);
         if (inventory.getStock() < quantity) {
             throw new BadRequestException("Stock is not enough");
         }
