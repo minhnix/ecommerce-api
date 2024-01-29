@@ -2,6 +2,7 @@ package com.nix.ecommerceapi.service.impl;
 
 import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
+import com.nix.ecommerceapi.mapper.OrderMapper;
 import com.nix.ecommerceapi.model.dto.ItemProduct;
 import com.nix.ecommerceapi.model.dto.OrderInfo;
 import com.nix.ecommerceapi.model.entity.Order;
@@ -9,9 +10,11 @@ import com.nix.ecommerceapi.model.entity.Payment;
 import com.nix.ecommerceapi.model.request.CheckoutRequest;
 import com.nix.ecommerceapi.model.response.CartResponse;
 import com.nix.ecommerceapi.model.response.CheckoutResponse;
+import com.nix.ecommerceapi.model.response.OrderSummary;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.*;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.dialect.lock.PessimisticEntityLockException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +50,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class})
-    public Order order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
+    public OrderSummary order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
         //TODO: fixed order price with x.xx
         if (checkoutRequest.getPaymentMethod() == null)
             throw new BadRequestException("No payment method choose");
@@ -59,9 +62,16 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())
             throw new BadRequestException("Address is empty");
         CheckoutResponse checkoutResponse = checkoutReview(checkoutRequest, user);
-        checkoutResponse.getProducts().forEach(
-                cartResponse -> inventoryService.processOrderAndSaveInventory(cartResponse.getProduct().getModelId(), cartResponse.getQuantity())
-        );
+        try {
+            checkoutResponse.getProducts().forEach(
+                    cartResponse -> inventoryService.processOrderAndSaveInventory(
+                            cartResponse.getProduct().getModelId(),
+                            cartResponse.getQuantity())
+            );
+        } catch (PessimisticEntityLockException e) {
+            throw new BadRequestException("Order error");
+            //TODO:: change strategy handle pessimistic lock timeout (such as retry, go next product, etc...)
+        }
         OrderInfo orderInfo = OrderInfo.builder()
                 .address(checkoutRequest.getAddress())
                 .paymentType(checkoutRequest.getPaymentType())
@@ -70,7 +80,7 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .build();
         Order order = orderService.createOrder(checkoutResponse, orderInfo);
         checkoutResponse.getProducts().forEach(cartResponse -> cartService.deleteCart(cartResponse.getId(), user));
-        return order;
+        return OrderMapper.INSTANCE.mapToOrderSummary(order);
     }
 
     private List<CartResponse> checkAndGetProductAvailable(List<ItemProduct> itemProducts, List<CartResponse> cartResponses) {
