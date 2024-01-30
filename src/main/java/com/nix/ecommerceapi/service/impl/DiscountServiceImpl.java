@@ -37,7 +37,6 @@ public class DiscountServiceImpl implements DiscountService {
 
     @Override
     public PagedResponse<Discount> getAllDiscount(Pageable pageable, CustomUserDetails user, long totalOrderValue) {
-        //TODO: display discount available
         if (user != null && user.isAdmin()) {
             return new PagedResponse<>(discountRepository.findAll(pageable));
         }
