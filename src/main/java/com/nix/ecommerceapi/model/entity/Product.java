@@ -3,11 +3,13 @@ package com.nix.ecommerceapi.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nix.ecommerceapi.utils.SlugUtils;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 
 import java.util.ArrayList;
@@ -48,18 +50,16 @@ public class Product extends AbstractAuditing  {
     private boolean isPublished = false;
     @JsonProperty("is_variant")
     private boolean isVariant = false;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "JSON")
+    private String attributes;
     @OneToOne(fetch = FetchType.LAZY, mappedBy = "product", optional = false)
     private InventoryProduct inventoryProduct;
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Model> models = new ArrayList<>();
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Attribute> attributes = new ArrayList<>();
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductOption> productOptions = new ArrayList<>();
-    public void addAttribute(Attribute attribute) {
-        attribute.setProduct(this);
-        attributes.add(attribute);
-    }
+
     @PrePersist
     private void createSlug() {
         slug = SlugUtils.createSlug(name);
