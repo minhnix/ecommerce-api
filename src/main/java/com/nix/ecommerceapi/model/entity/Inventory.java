@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 
+@EqualsAndHashCode(callSuper = false)
 @Entity
 @Table(name = "inventories")
 @Data

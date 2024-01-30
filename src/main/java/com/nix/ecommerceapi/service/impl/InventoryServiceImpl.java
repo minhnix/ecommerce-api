@@ -9,7 +9,6 @@ import com.nix.ecommerceapi.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -37,7 +36,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void processOrderAndSaveInventory(Long modelId, Long quantity) {
         Inventory inventory = inventoryRepository.getByIdAndObtainPessimisticWriteLocking(modelId);
         if (inventory.getStock() < quantity) {
