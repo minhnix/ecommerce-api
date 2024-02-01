@@ -7,14 +7,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
-
 @Entity
 @Table(name = "inventory_products")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class InventoryProduct extends AbstractAuditing  {
+public class InventoryProduct extends AbstractAuditing {
     @Id
     private Long id;
     @OneToOne(fetch = FetchType.LAZY)
