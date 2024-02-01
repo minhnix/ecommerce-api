@@ -1,9 +1,17 @@
 package com.nix.ecommerceapi.model.response;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nix.ecommerceapi.exception.AppException;
 import com.nix.ecommerceapi.mapper.ModelMapper;
+import com.nix.ecommerceapi.model.dto.AttributeDTO;
 import com.nix.ecommerceapi.model.dto.ExtInfo;
 import com.nix.ecommerceapi.model.dto.ProductOptionsDTO;
-import com.nix.ecommerceapi.model.entity.*;
+import com.nix.ecommerceapi.model.entity.Category;
+import com.nix.ecommerceapi.model.entity.Model;
+import com.nix.ecommerceapi.model.entity.Product;
+import com.nix.ecommerceapi.model.entity.ProductOption;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,7 +37,7 @@ public class ProductDetailResponse {
     private boolean isPublish;
     private Long stock;
     private Long sold;
-    private List<Attribute> attributes;
+    private List<AttributeDTO> attributes;
     private List<ProductOptionsDTO> productOptions;
     private List<ModelResponse> models;
 
@@ -47,7 +55,7 @@ public class ProductDetailResponse {
             this.isPublish = product.isPublished();
             this.stock = product.getInventoryProduct().getStock();
             this.sold = product.getInventoryProduct().getTotalSold();
-            this.attributes = product.getAttributes();
+            this.attributes = convertJsonToAttributes(product.getAttributes());
             return this;
         }
 
@@ -92,6 +100,18 @@ public class ProductDetailResponse {
             }
             this.models = modelResponses;
             return this;
+        }
+
+        private List<AttributeDTO> convertJsonToAttributes(String json) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<AttributeDTO> attributes;
+            try {
+                attributes = objectMapper.readValue(json, new TypeReference<>() {
+                });
+            } catch (JsonProcessingException e) {
+                throw new AppException("Cannot convert json to attributes");
+            }
+            return attributes;
         }
 
         private List<Integer> getProductOptionIndex(String modelName, List<ProductOptionsDTO> productOptionsList) {

@@ -91,4 +91,10 @@ public class ProductController {
         PagedResponse<SimpleProductResponse> products = productService.findAllPublishProduct(pageable);
         return new ApiResponse(products, "Product published", HttpStatus.OK.value());
     }
+
+    @PutMapping("/{id}")
+    public ApiResponse updateProduct(@PathVariable("id") Long id, @RequestBody @Valid ProductRequest productRequest) {
+        SimpleProductResponse product = productService.updateProduct(id, productRequest);
+        return new ApiResponse(product, "Update product", HttpStatus.OK.value());
+    }
 }
