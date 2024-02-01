@@ -15,6 +15,6 @@ public interface ProductService {
     PagedResponse<SimpleProductResponse> findAllPublishProduct(Pageable pageable);
     PagedResponse<SimpleProductResponse> findAllUnPublishProduct(Pageable pageable);
     ProductDetailResponse findOneProduct(Long id, CustomUserDetails user);
-    Product updateProduct(Long productId, ProductRequest productRequest);
+    SimpleProductResponse updateProduct(Long productId, ProductRequest productRequest);
     void deleteProduct(Long productId);
 }

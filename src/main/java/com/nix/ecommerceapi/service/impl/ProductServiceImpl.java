@@ -1,9 +1,9 @@
 package com.nix.ecommerceapi.service.impl;
 
+import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.DuplicateEntityException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.mapper.ProductMapper;
-import com.nix.ecommerceapi.model.dto.AttributeDTO;
 import com.nix.ecommerceapi.model.entity.*;
 import com.nix.ecommerceapi.model.request.ProductRequest;
 import com.nix.ecommerceapi.model.response.PagedResponse;
@@ -13,6 +13,7 @@ import com.nix.ecommerceapi.repository.CategoryRepository;
 import com.nix.ecommerceapi.repository.ProductRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.*;
+import com.nix.ecommerceapi.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,6 +43,9 @@ public class ProductServiceImpl implements ProductService {
         setBasicInfoProduct(product, productRequest);
         Product savedProduct = productRepository.save(product);
         if (productRequest.isVariant() && !productRequest.getVariants().isEmpty()) {
+            if (productRequest.getOptions().isEmpty()) {
+                throw new BadRequestException("Product options not set!");
+            }
             productOptionService.batchInsertProductOption(savedProduct.getId(), productRequest.getOptions());
             long totalStock = 0;
             for (var variant : productRequest.getVariants()) {
@@ -92,8 +96,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDetailResponse findOneProduct(Long id, CustomUserDetails user) {
         Product product = productRepository.findById(id, ProductEntityGraph.____()
-                .attributes()
-                .____.category()
+                .category()
                 .____.inventoryProduct()
                 .____.____()
         ).orElseThrow(() -> new NotFoundException(String.format("Product not found with id %d", id)));
@@ -106,15 +109,33 @@ public class ProductServiceImpl implements ProductService {
         builder.setProduct(product)
                 .setProductOptions(productOptions)
                 .setModels(models);
+        log.info(product.getAttributes());
         return builder.build();
     }
 
     @Override
-    public Product updateProduct(Long productId, ProductRequest productRequest) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new NotFoundException(String.format("Product not found with id %d", productId)));
-        setBasicInfoProduct(product, productRequest);
-
-        return null;
+    @Transactional
+    public SimpleProductResponse updateProduct(Long productId, ProductRequest productRequest) {
+        Product product = productRepository.findById(productId, ProductEntityGraph.____().category().____.____())
+                .orElseThrow(() -> new NotFoundException(String.format("Product not found with id %d", productId)));
+        updateBasicInfoProduct(product, productRequest);
+        Product savedProduct = productRepository.save(product);
+        if (product.isVariant() && productRequest.isVariant()) {
+            // update model
+        } else if (product.isVariant()) {
+            // delete all model, insert new model product
+        } else if (productRequest.isVariant()) {
+            if (productRequest.getOptions().isEmpty()) {
+                throw new BadRequestException("Product options not set!");
+            }
+            // insert new model
+//            productOptionService.batchInsertProductOption();
+//            for (var variant : productRequest.getVariants()) {
+//                Model model = modelService.createModel(savedProduct, variant);
+//            }
+//            inventoryProductService.createInventoryProduct(savedProduct, totalStock);
+        }
+        return ProductMapper.INSTANCE.toSimpleProductResponse(savedProduct);
     }
 
     @Override
@@ -130,9 +151,20 @@ public class ProductServiceImpl implements ProductService {
         if (existName) throw new DuplicateEntityException("Product with the same name already exists");
         product.setCategory(category);
         ProductMapper.INSTANCE.updateProduct(productRequest, product);
-        for (AttributeDTO dto : productRequest.getAttributes()) {
-            product.addAttribute(new Attribute(dto.getName(), dto.getValue()));
-        }
+        product.setAttributes(JsonUtils.objectToJsonString(productRequest.getAttributes()));
     }
 
+    private void updateBasicInfoProduct(Product product, ProductRequest productRequest) {
+        if (!product.getName().equals(productRequest.getName())) {
+            boolean existName = productRepository.existsByName(productRequest.getName());
+            if (existName) throw new DuplicateEntityException("Product with the same name already exists");
+        }
+        if (!product.getCategory().getId().equals(productRequest.getCategoryId())) {
+            Category category = categoryRepository.findById(productRequest.getCategoryId())
+                    .orElseThrow(() -> new NotFoundException(String.format("Category not found with id %d", productRequest.getCategoryId())));
+            product.setCategory(category);
+        }
+        ProductMapper.INSTANCE.updateProduct(productRequest, product);
+        product.setAttributes(JsonUtils.objectToJsonString(productRequest.getAttributes()));
+    }
 }
