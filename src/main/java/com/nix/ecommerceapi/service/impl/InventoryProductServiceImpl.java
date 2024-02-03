@@ -1,5 +1,6 @@
 package com.nix.ecommerceapi.service.impl;
 
+import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.model.entity.InventoryProduct;
 import com.nix.ecommerceapi.model.entity.Product;
 import com.nix.ecommerceapi.repository.InventoryProductRepository;
@@ -25,6 +26,16 @@ public class InventoryProductServiceImpl implements InventoryProductService {
         inventoryProduct.setLocation("unknown");
         inventoryProduct.setProduct(product);
         inventoryProduct.setTotalSold(0L);
+        return inventoryProductRepository.save(inventoryProduct);
+    }
+
+    @Override
+    public InventoryProduct updateInventoryProduct(Long productId, Long stock, Long totalSold, String location) {
+        InventoryProduct inventoryProduct = inventoryProductRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product inventory not found"));
+        if (stock != null) inventoryProduct.setStock(stock);
+        if (totalSold != null) inventoryProduct.setTotalSold(totalSold);
+        if (location != null) inventoryProduct.setLocation(location);
         return inventoryProductRepository.save(inventoryProduct);
     }
 }

@@ -4,6 +4,7 @@ import com.nix.ecommerceapi.model.entity.Model;
 import com.nix.ecommerceapi.model.entity.ModelEntityGraph;
 import com.nix.ecommerceapi.model.entity.Product;
 import com.nix.ecommerceapi.model.request.VariantRequest;
+import com.nix.ecommerceapi.repository.InventoryRepository;
 import com.nix.ecommerceapi.repository.ModelRepository;
 import com.nix.ecommerceapi.service.ModelService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ModelServiceImpl implements ModelService {
     private final ModelRepository modelRepository;
+    private final InventoryRepository inventoryRepository;
+
     @Override
     @Transactional
     public Model createModel(Product product, VariantRequest variant) {
@@ -37,8 +40,17 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public List<Model> findAllByProductId(Long productId) {
-        return modelRepository.findAllByProductId(productId, ModelEntityGraph.____()
-                .inventory().____.____());
+    public List<Model> findAllByProductId(Long productId, Boolean isFetchInventory) {
+        if (isFetchInventory)
+            return modelRepository.findAllByProductId(productId, ModelEntityGraph.____()
+                    .inventory().____.____());
+        return modelRepository.findAllByProductId(productId, ModelEntityGraph.NOOP);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByProductId(Long productId) {
+        inventoryRepository.deleteAllByProductId(productId);
+        modelRepository.deleteAllByProductId(productId);
     }
 }

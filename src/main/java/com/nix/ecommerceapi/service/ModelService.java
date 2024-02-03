@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface ModelService {
     Model createModel(Product product, VariantRequest variant);
-    List<Model> findAllByProductId(Long productId);
+    List<Model> findAllByProductId(Long productId, Boolean isFetchInventory);
+    void deleteByProductId(Long productId);
 }

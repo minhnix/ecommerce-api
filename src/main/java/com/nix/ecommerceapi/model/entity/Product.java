@@ -53,11 +53,11 @@ public class Product extends AbstractAuditing  {
     @Type(JsonType.class)
     @Column(columnDefinition = "JSON")
     private String attributes;
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "product", optional = false)
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "product", optional = false, cascade = CascadeType.ALL)
     private InventoryProduct inventoryProduct;
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Model> models = new ArrayList<>();
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ProductOption> productOptions = new ArrayList<>();
 
     @PrePersist

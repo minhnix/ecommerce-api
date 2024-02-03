@@ -73,4 +73,10 @@ public class ProductOptionServiceImpl implements ProductOptionService {
     public List<ProductOption> findAllByProduct(Product product) {
         return productOptionRepository.findAllByProduct(product, ProductOptionEntityGraph.____().option().____.____());
     }
+
+    @Override
+    @Transactional
+    public void deleteAllByProductId(Long productId) {
+        productOptionRepository.deleteAllByProductId(productId);
+    }
 }

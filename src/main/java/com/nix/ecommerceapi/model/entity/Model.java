@@ -30,7 +30,7 @@ public class Model extends AbstractAuditing {
     private Long priceAfterDiscount;
     @Column(name = "model_combined_name")
     private String name;
-    @OneToOne(mappedBy = "model", fetch = FetchType.LAZY, optional = false)
+    @OneToOne(mappedBy = "model", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Inventory inventory;
     @JsonIgnore
     @Column(name = "model_is_published")

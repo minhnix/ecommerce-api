@@ -11,5 +11,6 @@ public interface ProductOptionService {
     void batchInsertProductOption(Long productId, Long optionId, List<String> values);
     void batchInsertProductOption(Long productId, List<ProductOptionsDTO> productOptions);
     List<ProductOption> findAllByProduct(Product product);
+    void deleteAllByProductId(Long productId);
 
 }
