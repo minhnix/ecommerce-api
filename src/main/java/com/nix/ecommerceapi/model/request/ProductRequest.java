@@ -25,6 +25,7 @@ public class ProductRequest {
     private Long price;
     private Long quantity;
     private String image;
+    @Valid
     private List<ProductOptionsDTO> options;
     @Valid
     private List<VariantRequest> variants;

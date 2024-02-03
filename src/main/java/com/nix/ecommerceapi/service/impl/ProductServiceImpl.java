@@ -11,6 +11,7 @@ import com.nix.ecommerceapi.model.response.PagedResponse;
 import com.nix.ecommerceapi.model.response.ProductDetailResponse;
 import com.nix.ecommerceapi.model.response.SimpleProductResponse;
 import com.nix.ecommerceapi.repository.CategoryRepository;
+import com.nix.ecommerceapi.repository.InventoryProductRepository;
 import com.nix.ecommerceapi.repository.ProductOptionRepository;
 import com.nix.ecommerceapi.repository.ProductRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
@@ -32,8 +33,8 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
-    private final ProductOptionRepository productOptionRepository;
     private final InventoryProductService inventoryProductService;
+    private final InventoryProductRepository inventoryProductRepository;
     private final InventoryService inventoryService;
     private final ModelService modelService;
     private final ProductOptionService productOptionService;
@@ -154,8 +155,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(Long productId) {
-
+        modelService.deleteByProductId(productId);
+        productOptionService.deleteAllByProductId(productId);
+        inventoryProductRepository.deleteByProductId(productId);
+        productRepository.deleteById(productId);
     }
 
     //TODO: update partial, put product, delete.

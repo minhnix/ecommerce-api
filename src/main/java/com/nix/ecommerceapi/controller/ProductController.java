@@ -97,4 +97,10 @@ public class ProductController {
         SimpleProductResponse product = productService.updateProduct(id, productRequest);
         return new ApiResponse(product, "Update product", HttpStatus.OK.value());
     }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse updateProduct(@PathVariable("id") Long id) {
+        productService.deleteProduct(id);
+        return ApiResponse.successWithOutMetadata("deleted");
+    }
 }
