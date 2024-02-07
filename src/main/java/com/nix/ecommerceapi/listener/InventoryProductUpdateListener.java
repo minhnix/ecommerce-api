@@ -9,9 +9,11 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @AllArgsConstructor
+@Transactional
 public class InventoryProductUpdateListener {
     private final InventoryProductRepository repository;
 
@@ -19,8 +21,8 @@ public class InventoryProductUpdateListener {
     @EventListener
     public void updateListener(InventoryProductUpdateEvent event) {
         InventoryProduct inventoryProduct = repository.getByIdAndObtainPessimisticWriteLocking(event.id());
-        inventoryProduct.setStock(inventoryProduct.getStock() + event.stock());
-        inventoryProduct.setTotalSold(inventoryProduct.getTotalSold() + event.totalSold());
+        inventoryProduct.setStock(inventoryProduct.getStock() - event.amount());
+        inventoryProduct.setTotalSold(inventoryProduct.getTotalSold() + event.amount());
         repository.save(inventoryProduct);
     }
 

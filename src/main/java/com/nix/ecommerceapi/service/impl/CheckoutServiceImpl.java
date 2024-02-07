@@ -1,5 +1,6 @@
 package com.nix.ecommerceapi.service.impl;
 
+import com.nix.ecommerceapi.event.InventoryProductUpdateEvent;
 import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.mapper.OrderMapper;
@@ -15,10 +16,13 @@ import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.*;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.dialect.lock.PessimisticEntityLockException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,8 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final DiscountService discountService;
     private final InventoryService inventoryService;
     private final OrderService orderService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+
 
     @Override
     public CheckoutResponse checkoutReview(CheckoutRequest checkoutRequest, CustomUserDetails user) {
@@ -61,7 +67,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
         if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())
             throw new BadRequestException("Address is empty");
-        CheckoutResponse checkoutResponse = checkoutReview(checkoutRequest, user);
+        CheckoutResponse checkoutResponse = this.checkoutReview(checkoutRequest, user);
         try {
             checkoutResponse.getProducts().forEach(
                     cartResponse -> inventoryService.processOrderAndSaveInventory(
@@ -80,7 +86,19 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .build();
         Order order = orderService.createOrder(checkoutResponse, orderInfo);
         checkoutResponse.getProducts().forEach(cartResponse -> cartService.deleteCart(cartResponse.getId(), user));
+        this.publishEventUpdateInventoryProduct(checkoutResponse);
         return OrderMapper.INSTANCE.mapToOrderSummary(order);
+    }
+
+    private void publishEventUpdateInventoryProduct(CheckoutResponse checkoutResponse) {
+        Map<Long, Long> amount = new HashMap<>();
+        checkoutResponse.getProducts().forEach(
+                cartResponse -> {
+                    long value = amount.getOrDefault(cartResponse.getProduct().getProductId(), 0L);
+                    amount.put(cartResponse.getProduct().getProductId(), value + cartResponse.getQuantity());
+                }
+        );
+        amount.forEach((k, v) -> applicationEventPublisher.publishEvent(new InventoryProductUpdateEvent(k, v)));
     }
 
     private List<CartResponse> checkAndGetProductAvailable(List<ItemProduct> itemProducts, List<CartResponse> cartResponses) {

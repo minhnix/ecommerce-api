@@ -12,7 +12,6 @@ import com.nix.ecommerceapi.model.response.ProductDetailResponse;
 import com.nix.ecommerceapi.model.response.SimpleProductResponse;
 import com.nix.ecommerceapi.repository.CategoryRepository;
 import com.nix.ecommerceapi.repository.InventoryProductRepository;
-import com.nix.ecommerceapi.repository.ProductOptionRepository;
 import com.nix.ecommerceapi.repository.ProductRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.*;
