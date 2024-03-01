@@ -42,8 +42,7 @@ public class InventoryServiceImpl implements InventoryService {
         if (inventory.getStock() < quantity) {
             throw new BadRequestException("Stock is not enough");
         }
-        inventory.setStock(inventory.getStock() - quantity);
-        inventory.setTotalSold(inventory.getTotalSold() + quantity);
-        return inventoryRepository.save(inventory);
+        inventoryRepository.atomicUpdate(modelId, quantity);
+        return inventory;
     }
 }

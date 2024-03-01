@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 @Slf4j
 @AllArgsConstructor
 public class RedisLocker implements DistributedLocker {
-    private static final int DEFAULT_RETRY_TIME_MS = 100;
+    private static final int DEFAULT_RETRY_TIME_MS = 20;
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
