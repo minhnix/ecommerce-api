@@ -1,4 +1,8 @@
 package com.nix.ecommerceapi.event;
 
-public record InventoryProductUpdateEvent(Long id, Long amount) {
+import com.nix.ecommerceapi.model.response.CartResponse;
+
+import java.util.List;
+
+public record InventoryProductUpdateEvent(List<CartResponse> products) {
 }

@@ -1,11 +1,13 @@
 package com.nix.ecommerceapi.service.impl;
 
 import com.nix.ecommerceapi.event.InventoryProductUpdateEvent;
+import com.nix.ecommerceapi.exception.AppException;
 import com.nix.ecommerceapi.exception.BadRequestException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.mapper.OrderMapper;
 import com.nix.ecommerceapi.model.dto.ItemProduct;
 import com.nix.ecommerceapi.model.dto.OrderInfo;
+import com.nix.ecommerceapi.model.entity.Inventory;
 import com.nix.ecommerceapi.model.entity.Order;
 import com.nix.ecommerceapi.model.entity.Payment;
 import com.nix.ecommerceapi.model.request.CheckoutRequest;
@@ -14,15 +16,14 @@ import com.nix.ecommerceapi.model.response.CheckoutResponse;
 import com.nix.ecommerceapi.model.response.OrderSummary;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.*;
+import com.nix.ecommerceapi.service.locker.DistributedLocker;
+import com.nix.ecommerceapi.service.locker.LockExecutionResult;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.dialect.lock.PessimisticEntityLockException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final InventoryService inventoryService;
     private final OrderService orderService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final DistributedLocker locker;
 
 
     @Override
@@ -55,7 +57,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     }
 
     @Override
-    @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, RuntimeException.class})
+    @Transactional(rollbackFor = {BadRequestException.class, NotFoundException.class, AppException.class, RuntimeException.class})
     public OrderSummary order(CheckoutRequest checkoutRequest, CustomUserDetails user) {
         //TODO: fixed order price with x.xx
         if (checkoutRequest.getPaymentMethod() == null)
@@ -68,16 +70,22 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (checkoutRequest.getAddress() == null || checkoutRequest.getAddress().isEmpty())
             throw new BadRequestException("Address is empty");
         CheckoutResponse checkoutResponse = this.checkoutReview(checkoutRequest, user);
-        try {
-            checkoutResponse.getProducts().forEach(
-                    cartResponse -> inventoryService.processOrderAndSaveInventory(
-                            cartResponse.getProduct().getModelId(),
-                            cartResponse.getQuantity())
-            );
-        } catch (PessimisticEntityLockException e) {
-            throw new BadRequestException("Order error");
-            //TODO:: change strategy handle pessimistic lock timeout (such as retry, go next product, etc...)
-        }
+        String prefixKey = "ORDER:";
+        checkoutResponse.getProducts().forEach(
+                cartResponse -> {
+                    try {
+                        LockExecutionResult<Inventory> result = locker.lock(prefixKey + cartResponse.getProduct().getModelId().toString(),
+                                3000,
+                                2500,
+                                () -> inventoryService.processOrderAndSaveInventory(cartResponse.getProduct().getModelId(), cartResponse.getQuantity()));
+                        if (result.exception() != null) {
+                            throw new AppException("Order wrong");
+                        }
+                    } catch (Exception e) {
+                        throw new AppException("Order wrong");
+                    }
+                }
+        );
         OrderInfo orderInfo = OrderInfo.builder()
                 .address(checkoutRequest.getAddress())
                 .paymentType(checkoutRequest.getPaymentType())
@@ -86,19 +94,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .build();
         Order order = orderService.createOrder(checkoutResponse, orderInfo);
         checkoutResponse.getProducts().forEach(cartResponse -> cartService.deleteCart(cartResponse.getId(), user));
-        this.publishEventUpdateInventoryProduct(checkoutResponse);
+        applicationEventPublisher.publishEvent(new InventoryProductUpdateEvent(checkoutResponse.getProducts()));
         return OrderMapper.INSTANCE.mapToOrderSummary(order);
-    }
-
-    private void publishEventUpdateInventoryProduct(CheckoutResponse checkoutResponse) {
-        Map<Long, Long> amount = new HashMap<>();
-        checkoutResponse.getProducts().forEach(
-                cartResponse -> {
-                    long value = amount.getOrDefault(cartResponse.getProduct().getProductId(), 0L);
-                    amount.put(cartResponse.getProduct().getProductId(), value + cartResponse.getQuantity());
-                }
-        );
-        amount.forEach((k, v) -> applicationEventPublisher.publishEvent(new InventoryProductUpdateEvent(k, v)));
     }
 
     private List<CartResponse> checkAndGetProductAvailable(List<ItemProduct> itemProducts, List<CartResponse> cartResponses) {

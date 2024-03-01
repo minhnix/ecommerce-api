@@ -1,4 +1,5 @@
 package com.nix.ecommerceapi.service.locker;
+import com.nix.ecommerceapi.exception.CannotGetLock;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -37,7 +38,7 @@ public class RedisLocker implements DistributedLocker {
             }, key, maxRetryTimeMs);
         } catch (final Exception e) {
             log.error("Error while trying to get lock for key: {}", key, e);
-            return LockExecutionResult.buildLockAcquiredWithException(e);
+            return LockExecutionResult.buildLockNotAcquiredWithException(e);
         }
     }
 
@@ -46,7 +47,7 @@ public class RedisLocker implements DistributedLocker {
         redisTemplate.delete(key);
     }
 
-    private static <T> T tryToGetLock(final Supplier<T> task, final String key, final long maxRetryTimeMs) throws Exception {
+    private static <T> T tryToGetLock(final Supplier<T> task, final String key, final long maxRetryTimeMs) {
         long currentTime = System.currentTimeMillis();
         do {
             final T response = task.get();
@@ -55,7 +56,8 @@ public class RedisLocker implements DistributedLocker {
             }
             sleep(DEFAULT_RETRY_TIME_MS);
         } while (System.currentTimeMillis() <= currentTime + maxRetryTimeMs);
-        throw new Exception("Max retry but cannot get lock: " + key);
+
+        throw new CannotGetLock("Max retry but cannot get lock: " + key);
     }
 
     private static void sleep(int time) {

@@ -37,12 +37,13 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    public void processOrderAndSaveInventory(Long modelId, Long quantity) {
-        Inventory inventory = inventoryRepository.getByIdAndObtainPessimisticWriteLocking(modelId);
+    public Inventory processOrderAndSaveInventory(Long modelId, Long quantity) {
+        Inventory inventory = inventoryRepository.findById(modelId).orElseThrow(() -> new NotFoundException("Inventory not found"));
         if (inventory.getStock() < quantity) {
             throw new BadRequestException("Stock is not enough");
         }
         inventory.setStock(inventory.getStock() - quantity);
         inventory.setTotalSold(inventory.getTotalSold() + quantity);
+        return inventoryRepository.save(inventory);
     }
 }
