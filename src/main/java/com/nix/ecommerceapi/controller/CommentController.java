@@ -40,6 +40,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
+    @UserNotNull
     public void deleteComment(
             @PathVariable("id") Long commentId,
             @RequestParam(value = "productId") Long productId

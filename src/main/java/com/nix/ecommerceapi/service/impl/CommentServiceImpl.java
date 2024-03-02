@@ -1,6 +1,7 @@
 package com.nix.ecommerceapi.service.impl;
 
 import com.cosium.spring.data.jpa.entity.graph.domain2.EntityGraph;
+import com.nix.ecommerceapi.exception.ForbiddenException;
 import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.mapper.CommentMapper;
 import com.nix.ecommerceapi.model.dto.CommentDTO;
@@ -9,8 +10,10 @@ import com.nix.ecommerceapi.model.entity.Product;
 import com.nix.ecommerceapi.model.request.CommentRequest;
 import com.nix.ecommerceapi.repository.CommentRepository;
 import com.nix.ecommerceapi.repository.ProductRepository;
+import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.CommentService;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,10 +74,14 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteComment(Long productId, Long commentId) {
+        CustomUserDetails user = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Product product = productRepository.findById(productId, EntityGraph.NOOP)
                 .orElseThrow(() -> new NotFoundException("Product not found with id " + productId));
         Comment comment = commentRepository.findById(commentId, EntityGraph.NOOP)
                 .orElseThrow(() -> new NotFoundException("Comment not found with id " + commentId));
+        if (!comment.getUser().getId().equals(user.getId()) && !user.isAdmin()) {
+            throw new ForbiddenException("Delete comment denied!!!!");
+        }
         long width = comment.getRight() - comment.getLeft() + 1;
         commentRepository.deleteComment(productId, comment.getLeft(), comment.getRight());
         commentRepository.updateRightWhenDelete(productId, width, comment.getRight());
