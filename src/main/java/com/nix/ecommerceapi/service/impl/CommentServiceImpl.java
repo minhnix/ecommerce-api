@@ -73,6 +73,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public void deleteComment(Long productId, Long commentId) {
         CustomUserDetails user = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Product product = productRepository.findById(productId, EntityGraph.NOOP)
