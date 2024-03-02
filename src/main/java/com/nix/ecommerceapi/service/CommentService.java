@@ -9,4 +9,5 @@ import java.util.List;
 public interface CommentService {
     CommentDTO createComment(CommentRequest commentRequest);
     List<CommentDTO> getCommentByParentId(Long productId, Long parentId, Pageable pageable);
+    void deleteComment(Long productId, Long commentId);
 }

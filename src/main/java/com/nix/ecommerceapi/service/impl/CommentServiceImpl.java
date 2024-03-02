@@ -5,6 +5,7 @@ import com.nix.ecommerceapi.exception.NotFoundException;
 import com.nix.ecommerceapi.mapper.CommentMapper;
 import com.nix.ecommerceapi.model.dto.CommentDTO;
 import com.nix.ecommerceapi.model.entity.Comment;
+import com.nix.ecommerceapi.model.entity.Product;
 import com.nix.ecommerceapi.model.request.CommentRequest;
 import com.nix.ecommerceapi.repository.CommentRepository;
 import com.nix.ecommerceapi.repository.ProductRepository;
@@ -66,6 +67,18 @@ public class CommentServiceImpl implements CommentService {
 
         List<Comment> comments = commentRepository.findByParentIdIsNull(productId, pageable);
         return comments.stream().map(CommentMapper.INSTANCE::mapToCommentDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteComment(Long productId, Long commentId) {
+        Product product = productRepository.findById(productId, EntityGraph.NOOP)
+                .orElseThrow(() -> new NotFoundException("Product not found with id " + productId));
+        Comment comment = commentRepository.findById(commentId, EntityGraph.NOOP)
+                .orElseThrow(() -> new NotFoundException("Comment not found with id " + commentId));
+        long width = comment.getRight() - comment.getLeft() + 1;
+        commentRepository.deleteComment(productId, comment.getLeft(), comment.getRight());
+        commentRepository.updateRightWhenDelete(productId, width, comment.getRight());
+        commentRepository.updateLeftWhenDelete(productId, width, comment.getRight());
     }
 
 }

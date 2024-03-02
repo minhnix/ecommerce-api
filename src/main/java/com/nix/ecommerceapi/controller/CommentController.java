@@ -38,4 +38,12 @@ public class CommentController {
         Pageable pageable = PageableUtils.getPageable(page, size);
         return commentService.getCommentByParentId(productId, parentId, pageable);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteComment(
+            @PathVariable("id") Long commentId,
+            @RequestParam(value = "productId") Long productId
+    ) {
+        commentService.deleteComment(productId, commentId);
+    }
 }

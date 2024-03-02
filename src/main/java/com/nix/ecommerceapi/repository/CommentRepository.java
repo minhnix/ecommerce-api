@@ -22,6 +22,7 @@ public interface CommentRepository extends EntityGraphJpaRepository<Comment, Lon
     @Modifying
     @Transactional
     int updateRight(@Param("productId") Long productId, @Param("rgt") Long rgt);
+
     @Query(value = "update comments set lft = lft + 2 where product_id = :productId and lft > :rgt", nativeQuery = true)
     @Modifying
     @Transactional
@@ -29,6 +30,22 @@ public interface CommentRepository extends EntityGraphJpaRepository<Comment, Lon
 
     @Query(value = "select c from Comment c where c.product.id = :productId and c.left > :left and c.right < :right order by c.left")
     List<Comment> findByParentId(@Param("productId") Long productId, @Param("left") Long left, @Param("right") Long right, Pageable pageable);
+
     @Query("select c from Comment c where c.product.id = :productId and c.parentId is null order by c.left")
     List<Comment> findByParentIdIsNull(@Param("productId") Long productId, Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("delete from Comment c where c.product.id = :productId and c.left between :left and :right")
+    void deleteComment(@Param("productId") Long productId, @Param("left") Long left, @Param("right") Long right);
+
+    @Modifying
+    @Transactional
+    @Query("update Comment c set c.right = c.right - :width where c.product.id = :productId and c.right > :right")
+    void updateRightWhenDelete(@Param("productId") Long productId, @Param("width") Long width, @Param("right") Long right);
+
+    @Modifying
+    @Transactional
+    @Query("update Comment c set c.left = c.left - :width where c.product.id = :productId and c.left > :right")
+    void updateLeftWhenDelete(@Param("productId") Long productId, @Param("width") Long width, @Param("right") Long right);
 }
