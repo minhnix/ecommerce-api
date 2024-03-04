@@ -26,8 +26,8 @@ public class WebSecurityConfig {
     public static final String[] PUBLIC_URLS = {
             "/api/v1/auth/**",
     };
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-    private UserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserDetailsService userDetailsService;
 
     public WebSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;

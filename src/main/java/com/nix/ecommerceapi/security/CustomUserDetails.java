@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 public class CustomUserDetails implements UserDetails {
     @Valid
-    private User user;
-    public Collection<? extends GrantedAuthority> authorities;
+    private final User user;
+    public final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(User user, Collection<? extends GrantedAuthority> authorities) {
         this.user = user;
