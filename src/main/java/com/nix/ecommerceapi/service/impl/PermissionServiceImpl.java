@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -73,9 +74,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public List<Permission> findAllByRoleIdAndResourceName(Long roleId, String resourceName) {
-        return permissionRepository.findAllByRoleIdAndResourceName(roleId, resourceName,
-                PermissionEntityGraph.____().resource().____.____());
+    public List<Permission> findByRoleIdsAndResourceName(Collection<?> roleId, String resourceName) {
+        return permissionRepository.findByRoleIdInAndResourceNameIgnoreCase(roleId, resourceName, PermissionEntityGraph.NOOP);
     }
 
 }

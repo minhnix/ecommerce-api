@@ -5,6 +5,7 @@ import com.nix.ecommerceapi.model.request.PermissionRequest;
 import com.nix.ecommerceapi.model.response.PagedResponse;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface PermissionService {
@@ -19,5 +20,5 @@ public interface PermissionService {
 
     List<Permission> findAllByRoleId(Long roleId);
 
-    List<Permission> findAllByRoleIdAndResourceName(Long roleId, String resourceName);
+    List<Permission> findByRoleIdsAndResourceName(Collection<?> roleId, String resourceName);
 }

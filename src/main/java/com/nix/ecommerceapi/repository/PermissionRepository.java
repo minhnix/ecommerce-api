@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface PermissionRepository extends EntityGraphJpaRepository<Permission, Long> {
@@ -18,5 +19,5 @@ public interface PermissionRepository extends EntityGraphJpaRepository<Permissio
 
     List<Permission> findAllByRoleId(Long roleId, EntityGraph entityGraph);
 
-    List<Permission> findAllByRoleIdAndResourceName(Long roleId, String resourceName, EntityGraph entityGraph);
+    List<Permission> findByRoleIdInAndResourceNameIgnoreCase(Collection<?> roleId, String resourceName, EntityGraph entityGraph);
 }

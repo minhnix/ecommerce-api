@@ -3,9 +3,13 @@ package com.nix.ecommerceapi.config;
 import com.nix.ecommerceapi.security.jwt.CustomAccessDeniedHandler;
 import com.nix.ecommerceapi.security.jwt.JwtAuthEntryPoint;
 import com.nix.ecommerceapi.security.jwt.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.PermissionEvaluator;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.BeanIds;
@@ -29,7 +33,9 @@ public class WebSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
 
-    public WebSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
+    public WebSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                             UserDetailsService userDetailsService
+    ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
     }
@@ -51,6 +57,14 @@ public class WebSecurityConfig {
     public AuthenticationManager authenticationManagerBean(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
+
+    @Bean
+    static MethodSecurityExpressionHandler expressionHandler(@Autowired PermissionEvaluator rolePermissionEvaluator) {
+        var expressionHandler = new DefaultMethodSecurityExpressionHandler();
+        expressionHandler.setPermissionEvaluator(rolePermissionEvaluator);
+        return expressionHandler;
+    }
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
