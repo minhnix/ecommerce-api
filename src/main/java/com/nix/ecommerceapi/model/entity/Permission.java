@@ -11,7 +11,12 @@ import org.hibernate.annotations.Type;
 import java.util.List;
 
 @Entity
-@Table(name = "permission")
+@Table(name = "permission", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {
+                "role_id",
+                "resource_id",
+        })
+})
 @Getter
 @Setter
 @NoArgsConstructor
