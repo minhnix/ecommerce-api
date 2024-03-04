@@ -1,6 +1,7 @@
 package com.nix.ecommerceapi.model.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,8 @@ public class Resource extends AbstractAuditing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String resource;
+    @NotNull
+    private String name;
 
     @Column(columnDefinition = "TEXT")
     private String description;
