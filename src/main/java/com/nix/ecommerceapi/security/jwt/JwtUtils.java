@@ -19,9 +19,9 @@ import java.util.Map;
 @Slf4j
 public class JwtUtils {
     @Value("${jwt.access-token-expiration-ms}")
-    private int accessTokenExpirationMs;
+    private long accessTokenExpirationMs;
     @Value("${jwt.refresh-token-expiration-ms}")
-    private int refreshTokenExpirationMs;
+    private long refreshTokenExpirationMs;
     @Value("${jwt.secretKey}")
     private String secretKey;
 
@@ -41,7 +41,7 @@ public class JwtUtils {
         }
     }
 
-    public String generateToken(JwtPayload payload, int expirationTimeMs) {
+    public String generateToken(JwtPayload payload, long expirationTimeMs) {
         Date now = new Date();
         Map<String, JwtPayload> claims = new HashMap<>();
         claims.put("payload", payload);
