@@ -7,13 +7,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "resources")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Resource extends AbstractAuditing {
+public class Resource extends AbstractAuditing implements Serializable {
+    private final static Long serialVersionUID = 1L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

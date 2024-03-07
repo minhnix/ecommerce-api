@@ -1,7 +1,7 @@
 package com.nix.ecommerceapi.security.permission;
 
-import com.nix.ecommerceapi.model.entity.Permission;
 import com.nix.ecommerceapi.model.entity.Role;
+import com.nix.ecommerceapi.model.response.PermissionResponse;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.PermissionService;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class RolePermissionEvaluator implements PermissionEvaluator {
         if (authentication != null && targetDomainObject instanceof String resource && permission instanceof String action) {
 
             CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-            List<Permission> permissions = permissionService.findByRoleIdsAndResourceName(
+            List<PermissionResponse> permissions = permissionService.findByRoleIdsAndResourceName(
                     customUserDetails.getRole().stream().map(Role::getId).collect(Collectors.toList()),
                     resource);
             return permissions.stream().anyMatch(p ->

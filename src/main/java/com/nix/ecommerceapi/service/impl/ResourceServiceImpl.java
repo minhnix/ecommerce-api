@@ -7,6 +7,7 @@ import com.nix.ecommerceapi.repository.PermissionRepository;
 import com.nix.ecommerceapi.repository.ResourceRepository;
 import com.nix.ecommerceapi.service.ResourceService;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "permission", allEntries = true)
     public Resource update(Resource resource) {
         Resource resource1 = resourceRepository.findById(resource.getId())
                 .orElseThrow(() -> new NotFoundException("Resource not found"));
@@ -35,6 +37,7 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "permission", allEntries = true)
     public void delete(Long id) {
         permissionRepository.deleteALlByResourceId(id);
         resourceRepository.deleteById(id);

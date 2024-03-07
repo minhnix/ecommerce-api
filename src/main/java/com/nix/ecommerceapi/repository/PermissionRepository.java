@@ -19,5 +19,6 @@ public interface PermissionRepository extends EntityGraphJpaRepository<Permissio
 
     List<Permission> findAllByRoleId(Long roleId, EntityGraph entityGraph);
 
+    @Query("select p from Permission p left join fetch p.resource where p.role.id in :roleId and lower(p.resource.name) = lower(:resourceName)")
     List<Permission> findByRoleIdInAndResourceNameIgnoreCase(Collection<?> roleId, String resourceName, EntityGraph entityGraph);
 }

@@ -3,6 +3,7 @@ package com.nix.ecommerceapi.service;
 import com.nix.ecommerceapi.model.entity.Permission;
 import com.nix.ecommerceapi.model.request.PermissionRequest;
 import com.nix.ecommerceapi.model.response.PagedResponse;
+import com.nix.ecommerceapi.model.response.PermissionResponse;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
@@ -20,5 +21,5 @@ public interface PermissionService {
 
     List<Permission> findAllByRoleId(Long roleId);
 
-    List<Permission> findByRoleIdsAndResourceName(Collection<?> roleId, String resourceName);
+    List<PermissionResponse> findByRoleIdsAndResourceName(Collection<?> roleId, String resourceName);
 }
