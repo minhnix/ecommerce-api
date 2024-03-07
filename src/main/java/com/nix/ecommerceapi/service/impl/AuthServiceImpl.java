@@ -56,11 +56,19 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
-        JwtPayload payload = new JwtPayload(user.getId(), user.getUsername(), user.getRole());
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = customUserDetails.getUser();
+        JwtPayload payload = JwtPayload.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastname(user.getLastname())
+                .status(user.getStatus())
+                .roles(user.getRoles())
+                .build();
         Token token = jwtUtils.generateTokenPair(payload);
         keyStoreService.updateRefreshToken(
-                ((CustomUserDetails) authentication.getPrincipal()).getId(),
+                user.getId(),
                 token.getRefreshToken(),
                 null
         );

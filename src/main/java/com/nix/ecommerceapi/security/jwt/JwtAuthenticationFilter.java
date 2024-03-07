@@ -1,7 +1,9 @@
 package com.nix.ecommerceapi.security.jwt;
 
 import com.nix.ecommerceapi.exception.AuthFailureException;
-import com.nix.ecommerceapi.repository.KeyStoreRepository;
+import com.nix.ecommerceapi.mapper.UserMapper;
+import com.nix.ecommerceapi.model.entity.User;
+import com.nix.ecommerceapi.security.CustomUserDetails;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,10 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -28,11 +27,8 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final JwtUtils jwtUtils;
-    private final UserDetailsService userDetailsService;
-    private final KeyStoreRepository keyStoreRepository;
-
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         return new AntPathMatcher().match("/api/v1/auth/**", request.getServletPath());
     }
 
@@ -47,23 +43,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         try {
             JwtPayload payload = jwtUtils.getPayLoadIfTokenValidated(token);
-            String email = payload.getEmail();
-            UsernamePasswordAuthenticationToken authentication = getAuthenticationToken(email, request);
+            User user = UserMapper.INSTANCE.toUser(payload);
+            CustomUserDetails userDetails = CustomUserDetails.create(user);
+            JwtAuthenticationToken authentication = new JwtAuthenticationToken(
+                    userDetails, userDetails.getAuthorities()
+            );
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException | AuthFailureException e) {
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
-    }
-
-    private UsernamePasswordAuthenticationToken getAuthenticationToken(String email, HttpServletRequest request) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities()
-        );
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        return authentication;
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

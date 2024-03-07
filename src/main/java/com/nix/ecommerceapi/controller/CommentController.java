@@ -5,6 +5,7 @@ import com.nix.ecommerceapi.annotation.UserNotNull;
 import com.nix.ecommerceapi.model.constants.PageConstants;
 import com.nix.ecommerceapi.model.dto.CommentDTO;
 import com.nix.ecommerceapi.model.request.CommentRequest;
+import com.nix.ecommerceapi.repository.UserRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.CommentService;
 import com.nix.ecommerceapi.utils.PageableUtils;
@@ -17,14 +18,16 @@ import java.util.List;
 @RequestMapping("/api/v1/comments")
 public class CommentController {
     private final CommentService commentService;
+    private final UserRepository userRepository;
 
-    public CommentController(CommentService commentService) {
+    public CommentController(CommentService commentService, UserRepository userRepository) {
         this.commentService = commentService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
     public CommentDTO createComment(@RequestBody CommentRequest commentRequest, @CurrentUser @UserNotNull CustomUserDetails user) {
-        commentRequest.setUser(user.getUser());
+        commentRequest.setUser(userRepository.getReferenceById(user.getId()));
         return commentService.createComment(commentRequest);
     }
 

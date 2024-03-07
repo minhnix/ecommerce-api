@@ -11,6 +11,7 @@ import com.nix.ecommerceapi.model.request.CartRequest;
 import com.nix.ecommerceapi.model.response.CartResponse;
 import com.nix.ecommerceapi.repository.CartRepository;
 import com.nix.ecommerceapi.repository.ModelRepository;
+import com.nix.ecommerceapi.repository.UserRepository;
 import com.nix.ecommerceapi.security.CustomUserDetails;
 import com.nix.ecommerceapi.service.CartService;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final ModelRepository modelRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
@@ -36,7 +38,7 @@ public class CartServiceImpl implements CartService {
             cart.setQuantity(cart.getQuantity() + cartRequest.getQuantity());
         } else {
             cart = new Cart();
-            cart.setUser(user.getUser());
+            cart.setUser(userRepository.getReferenceById(user.getId()));
             Model model = modelRepository.findById(cartRequest.getModelId(), CartEntityGraph.NOOP)
                     .orElseThrow(() -> new NotFoundException("Model not found with id: " + cartRequest.getModelId()));
             cart.setModel(model);
