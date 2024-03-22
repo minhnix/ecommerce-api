@@ -3,6 +3,7 @@ package com.nix.ecommerceapi.utils;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 
 public class SecurityUtils {
@@ -45,6 +46,16 @@ public class SecurityUtils {
         } catch (Exception ex) {
             throw new RuntimeException("Failed to generate HMAC : " + ex.getMessage(), ex);
         }
+    }
+
+    public static String genarateRandomString(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder randomString = new StringBuilder();
+        SecureRandom secureRandom = new SecureRandom();
+        for (int i = 0; i < length; i++) {
+            randomString.append(characters.charAt(secureRandom.nextInt(characters.length())));
+        }
+        return randomString.toString();
     }
 
 }

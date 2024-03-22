@@ -1,7 +1,6 @@
 package com.nix.ecommerceapi.controller;
 
 import com.nix.ecommerceapi.exception.AuthFailureException;
-import com.nix.ecommerceapi.model.entity.User;
 import com.nix.ecommerceapi.model.request.LoginRequest;
 import com.nix.ecommerceapi.model.request.SignUpRequest;
 import com.nix.ecommerceapi.model.response.ApiResponse;
@@ -26,7 +25,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public User registerUser(@Valid @RequestBody SignUpRequest request) {
+    public ApiResponse registerUser(@Valid @RequestBody SignUpRequest request) {
         return authService.registerCustomer(request);
     }
 
@@ -52,5 +51,10 @@ public class AuthController {
         if (!StringUtils.hasText(refreshToken)) throw new AuthFailureException("Invalid token");
         Token token = authService.doRefreshToken(refreshToken);
         return ResponseEntity.ok(new ApiResponse(token, "Get new access token", HttpStatus.OK.value()));
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<ApiResponse> verifyEmail(@RequestParam("token") String token) {
+        return ResponseEntity.ok(authService.verifyEmail(token));
     }
 }
