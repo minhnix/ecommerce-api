@@ -18,8 +18,10 @@ public class PageableUtils {
 
     public static Pageable getPageable(int page, int size, String sortBy, String sortDir) {
         validatePage(page, size);
-        if (sortBy == null || sortDir == null)
+        if (sortBy == null)
             return PageRequest.of(page, size);
+        if (sortDir == null)
+            sortDir ="asc";
         Sort sort = (sortDir.equalsIgnoreCase(PageConstants.SORT_DES)) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         return PageRequest.of(page, size, sort);
     }

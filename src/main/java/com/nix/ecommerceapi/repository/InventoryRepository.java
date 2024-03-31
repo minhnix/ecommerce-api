@@ -14,6 +14,7 @@ public interface InventoryRepository extends EntityGraphJpaRepository<Inventory,
     void deleteAllByProductId(@Param("productId") Long productId);
 
     @Modifying
+    @Transactional
     @Query(value = "update inventories set inventory_stock = inventory_stock  - :amount, total_sold = total_sold + :amount where model_model_id = :id", nativeQuery = true)
     void atomicUpdate(@Param("id") Long id, @Param("amount") Long amount);
 
